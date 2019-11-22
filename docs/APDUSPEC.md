@@ -122,6 +122,8 @@ All other packets/chunks should contain message to sign
 | Path[3]    | byte (4) | Derivation Path Data   | ?         |
 | Path[4]    | byte (4) | Derivation Path Data   | ?         |
 
+**TODO: Extend to support a context string**
+
 *Other Chunks/Packets*
 
 | Field   | Type     | Content         | Expected |
