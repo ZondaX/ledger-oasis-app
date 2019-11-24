@@ -22,8 +22,6 @@
 #include "zxmacros.h"
 
 uint32_t bip44Path[BIP44_LEN_DEFAULT];
-uint8_t bech32_hrp_len;
-char bech32_hrp[MAX_BECH32_HRP_LEN + 1];
 
 #if defined(TARGET_NANOS)
 #define SAFE_HEARTBEAT(X)  io_seproxyhal_io_heartbeat(); X; io_seproxyhal_io_heartbeat();
@@ -140,31 +138,6 @@ uint16_t crypto_sign(uint8_t *signature,
 
 #endif
 
-uint8_t extractHRP(uint32_t rx, uint32_t offset) {
-    if (rx < offset + 1) {
-        THROW(APDU_CODE_DATA_INVALID);
-    }
-    MEMZERO(bech32_hrp, MAX_BECH32_HRP_LEN);
-
-    bech32_hrp_len = G_io_apdu_buffer[offset];
-
-    if (bech32_hrp_len == 0 || bech32_hrp_len > MAX_BECH32_HRP_LEN) {
-        THROW(APDU_CODE_DATA_INVALID);
-    }
-
-    memcpy(bech32_hrp, G_io_apdu_buffer + offset + 1, bech32_hrp_len);
-    bech32_hrp[bech32_hrp_len] = 0;     // zero terminate
-
-    return bech32_hrp_len;
-}
-
-void crypto_set_hrp(char *p) {
-    bech32_hrp_len = strlen(p);
-    if (bech32_hrp_len < MAX_BECH32_HRP_LEN) {
-        strcpy(bech32_hrp, p);
-    }
-}
-
 uint16_t crypto_fillAddress(uint8_t *buffer, uint16_t buffer_len) {
     if (buffer_len < PK_LEN + 50) {
         return 0;
@@ -173,6 +146,6 @@ uint16_t crypto_fillAddress(uint8_t *buffer, uint16_t buffer_len) {
     // extract pubkey and encode as bech32
     char *addr = (char *) (buffer + PK_LEN);
     crypto_extractPublicKey(bip44Path, buffer);
-    bech32EncodeFromBytes(addr, bech32_hrp, buffer, CX_RIPEMD160_SIZE);
+    bech32EncodeFromBytes(addr, COIN_HRP, buffer, PK_LEN);
     return PK_LEN + strlen(addr);
 }

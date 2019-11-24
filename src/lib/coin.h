@@ -28,6 +28,8 @@ extern "C" {
 #define BIP44_3_DEFAULT     (0)
 #define BIP44_4_DEFAULT     (0)
 
+#define COIN_HRP            "oasis"
+
 #ifdef __cplusplus
 }
 #endif

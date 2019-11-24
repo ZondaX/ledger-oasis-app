@@ -16,11 +16,13 @@
 
 #include <stdio.h>
 #include <zxmacros.h>
+#include <bech32.h>
 #include "lib/parser_impl.h"
 #include "bignum.h"
 #include "view_internal.h"
 #include "parser.h"
 #include "parser_txdef.h"
+#include "coin.h"
 
 parser_error_t parser_parse(parser_context_t *ctx,
                             const uint8_t *data,
@@ -91,10 +93,10 @@ __Z_INLINE parser_error_t parser_printQuantity(quantity_t *q,
 __Z_INLINE parser_error_t parser_printPublicKey(publickey_t *pk,
                                                 char *outVal, uint16_t outValLen,
                                                 uint8_t pageIdx, uint8_t *pageCount) {
-    char outBuffer[70];
+    char outBuffer[128];
     MEMZERO(outBuffer, sizeof(outBuffer));
-    // FIXME: format as an address with bech32
-    array_to_hexstr(outBuffer, (const uint8_t *) pk, sizeof(publickey_t));
+
+    bech32EncodeFromBytes(outBuffer, COIN_HRP, (uint8_t *) pk, sizeof(publickey_t));
     pageString(outVal, outValLen, outBuffer, pageIdx, pageCount);
     return parser_ok;
 }

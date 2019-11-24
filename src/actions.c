@@ -29,10 +29,6 @@ uint8_t app_sign() {
     return crypto_sign(signature, IO_APDU_BUFFER_SIZE - 2, message, messageLength);
 }
 
-void app_set_hrp(char *p) {
-    crypto_set_hrp(p);
-}
-
 uint8_t app_fill_address() {
     // Put data directly in the apdu buffer
     return crypto_fillAddress(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 2);

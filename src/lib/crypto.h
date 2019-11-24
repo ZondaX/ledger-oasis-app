@@ -28,11 +28,6 @@ extern "C" {
 #define PK_LEN       32u
 
 extern uint32_t bip44Path[BIP44_LEN_DEFAULT];
-extern char *hrp;
-
-uint8_t extractHRP(uint32_t rx, uint32_t offset);
-
-void crypto_set_hrp(char *p);
 
 uint16_t crypto_fillAddress(uint8_t *buffer, uint16_t buffer_len);
 
