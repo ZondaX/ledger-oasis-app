@@ -35,12 +35,14 @@ typedef enum {
 } oasis_methods_e;
 
 typedef uint8_t publickey_t[32];
-typedef uint8_t quantity_t[64];
+typedef struct {
+    uint8_t buffer[64];
+    size_t len;
+} quantity_t;
 
 typedef struct {
     uint64_t fee_gas;
-    const uint8_t *fee_amount;
-    size_t fee_amount_len;
+    quantity_t fee_amount;
 
     // Union type will depend on method
     union {

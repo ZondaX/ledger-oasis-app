@@ -99,6 +99,28 @@ __Z_INLINE parser_error_t _matchKey(CborValue *value, const char *expectedKey) {
     return result;
 }
 
+__Z_INLINE parser_error_t _readPublicKey(CborValue *value, publickey_t *out) {
+    CHECK_CBOR_TYPE(cbor_value_get_type(value), CborByteStringType);
+    CborValue dummy;
+    size_t len = sizeof(publickey_t);
+    CHECK_CBOR_ERR(cbor_value_copy_byte_string(value, (uint8_t *) out, &len, &dummy));
+    if (len != sizeof(publickey_t)) {
+        return parser_unexpected_value;
+    }
+    return parser_ok;
+}
+
+#define sizeof_field(type, member) sizeof(((type *)0)->member)
+
+__Z_INLINE parser_error_t _readQuantity(CborValue *value, quantity_t *out) {
+    CHECK_CBOR_TYPE(cbor_value_get_type(value), CborByteStringType);
+    CborValue dummy;
+    MEMZERO(out, sizeof(quantity_t));
+    out->len = sizeof_field(quantity_t, buffer);
+    CHECK_CBOR_ERR(cbor_value_copy_byte_string(value, (uint8_t *) out->buffer, &out->len, &dummy));
+    return parser_ok;
+}
+
 __Z_INLINE parser_error_t _readFee(parser_tx_t *v, CborValue *value) {
 //    "fee": {
 //        "gas": 0,
@@ -121,9 +143,7 @@ __Z_INLINE parser_error_t _readFee(parser_tx_t *v, CborValue *value) {
 
     CHECK_CBOR_MATCH_KEY(&contents, "amount");
     CHECK_CBOR_ERR(cbor_value_advance(&contents));
-    CHECK_CBOR_TYPE(cbor_value_get_type(&contents), CborByteStringType);
-    CHECK_CBOR_ERR(cbor_value_get_string_length(&contents, &v->oasis_tx.fee_amount_len));
-    v->oasis_tx.fee_amount = contents.ptr;
+    CHECK_PARSER_ERR(_readQuantity(&contents, &v->oasis_tx.fee_amount));
     CHECK_CBOR_ERR(cbor_value_advance(&contents));
 
     // Close container
@@ -136,27 +156,6 @@ __Z_INLINE parser_error_t _skipBody(parser_tx_t *v, CborValue *value) {
     CHECK_CBOR_MATCH_KEY(value, "body");
     CHECK_CBOR_ERR(cbor_value_advance(value));
     CHECK_CBOR_ERR(cbor_value_advance(value));
-    return parser_ok;
-}
-
-__Z_INLINE parser_error_t _readPublicKey(CborValue *value, publickey_t *out) {
-    CHECK_CBOR_TYPE(cbor_value_get_type(value), CborByteStringType);
-    CborValue dummy;
-    size_t len = sizeof(publickey_t);
-    CHECK_CBOR_ERR(cbor_value_copy_byte_string(value, (uint8_t *) out, &len, &dummy));
-    if (len != sizeof(publickey_t)) {
-        return parser_unexpected_value;
-    }
-    return parser_ok;
-}
-
-__Z_INLINE parser_error_t _readQuantity(CborValue *value, quantity_t *out) {
-    CHECK_CBOR_TYPE(cbor_value_get_type(value), CborByteStringType);
-    CborValue dummy;
-    size_t len = sizeof(quantity_t);
-    MEMZERO(out, len);
-    CHECK_CBOR_ERR(cbor_value_copy_byte_string(value, (uint8_t *) out, &len, &dummy));
-    CHECK_CBOR_ERR(cbor_value_calculate_string_length(value, &len));
     return parser_ok;
 }
 
@@ -283,6 +282,8 @@ parser_error_t _readTx(parser_context_t *c, parser_tx_t *v) {
         return parser_unexpected_buffer_end;
     }
 
+    MEMZERO(&v->oasis_tx, sizeof(oasis_tx_t));
+
     CHECK_CBOR_TYPE(cbor_value_get_type(&it), CborMapType);
     CHECK_CBOR_MAP_LEN(&it, 4);
 
@@ -312,13 +313,28 @@ parser_error_t _validateTx(parser_context_t *c, parser_tx_t *v) {
 }
 
 uint8_t _getNumItems(parser_context_t *c, parser_tx_t *v) {
+    // typical tx: Type, Fee, Gas, + Body
+    uint8_t itemCount = 3;
+
     switch (v->oasis_tx.method) {
         case stakingTransfer:
-            // FIXME: calculate correct number
+            itemCount +=2;
+            break;
+        case stakingBurn:
+            itemCount +=1;
+            break;
+        case stakingAddEscrow:
+            itemCount +=2;
+            break;
+        case stakingReclaimEscrow:
+            itemCount +=2;
+            break;
+        case stakingAmendComissionSchedule:
             break;
         case unknownMethod:
         default:
             break;
     }
-    return 0;
+
+    return itemCount;
 }
