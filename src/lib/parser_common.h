@@ -25,15 +25,20 @@ extern "C" {
 typedef enum {
     parser_ok = 0,
     parser_no_data,
-    parser_init_context_empty,
+    parser_unexpected_type,
+    parser_unexpected_method,
     parser_unexpected_buffer_end,
+    parser_unexpected_value,
+
+    parser_init_context_empty,
     parser_unexpected_version,
     parser_unexpected_characters,
     parser_unexpected_field,
     parser_duplicated_field,
     parser_value_out_of_range,
     parser_unexpected_chain,
-    parser_query_no_results,
+    /////
+    parser_cbor_unexpected,
     /////
     parser_display_idx_out_of_range,
     parser_display_page_out_of_range,
