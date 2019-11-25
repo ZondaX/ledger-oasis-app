@@ -74,12 +74,18 @@ void crypto_extractPublicKey(uint32_t bip44Path[BIP44_LEN_DEFAULT], uint8_t *pub
     }
 }
 
-uint16_t crypto_sign(uint8_t *signature, uint16_t signatureMaxlen, const uint8_t *message, uint16_t messageLen) {
+uint16_t crypto_sign(uint8_t *signature,
+                     uint16_t signatureMaxlen,
+                     const uint8_t *message,
+                     uint16_t messageLen) {
     uint8_t messageDigest[CX_SHA512_SIZE];
     int signatureLength;
 
     // Hash it
-    cx_hash_sha512(message, messageLen, messageDigest, CX_SHA512_SIZE);
+    cx_sha512_t ctx;
+    cx_sha512_init((cx_sha512_t *)&ctx.header);
+    cx_hash(&ctx.header, 0, (const uint8_t *) PIC(COIN_HASH_CONTEXT), strlen(PIC(COIN_HASH_CONTEXT)), NULL, 0);
+    cx_hash(&ctx.header, CX_LAST, message, messageLen, messageDigest, CX_SHA512_SIZE);
 
     cx_ecfp_private_key_t cx_privateKey;
     uint8_t privateKeyData[32];

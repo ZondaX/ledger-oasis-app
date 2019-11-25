@@ -29,6 +29,7 @@ extern "C" {
 #define BIP44_4_DEFAULT     (0)
 
 #define COIN_HRP            "oasis"
+#define COIN_HASH_CONTEXT   "oasis-core/consensus: tx for chain test-chain-id"
 
 #ifdef __cplusplus
 }
