@@ -79,8 +79,6 @@ The general structure of commands and responses is as follows:
 | Path[2]    | byte (4)       | Derivation Path Data   | ?              |
 | Path[3]    | byte (4)       | Derivation Path Data   | ?              |
 | Path[4]    | byte (4)       | Derivation Path Data   | ?              |
-| HRP_LEN    | byte(1)        | Bech32 HRP Length      | 1<=HRP_LEN<=83 |
-| HRP        | byte (HRP_LEN) | Bech32 HRP             |                |
 
 First three items in the derivation path will be hardened automatically hardened
 
@@ -121,8 +119,6 @@ All other packets/chunks should contain message to sign
 | Path[2]    | byte (4) | Derivation Path Data   | ?         |
 | Path[3]    | byte (4) | Derivation Path Data   | ?         |
 | Path[4]    | byte (4) | Derivation Path Data   | ?         |
-
-**TODO: Extend to support a context string**
 
 *Other Chunks/Packets*
 

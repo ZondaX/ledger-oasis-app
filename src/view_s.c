@@ -199,7 +199,8 @@ void view_idle_show_impl() {
 }
 
 void view_address_show_impl() {
-#define KEYCHUNKSIZE    12
+    // FIXME: Need to swap between two screens when item is too long
+#define KEYCHUNKSIZE    20
     // move first part to key
     MEMZERO(viewdata.key, MAX_CHARS_PER_KEY_LINE);
     MEMCPY(viewdata.key, address, KEYCHUNKSIZE);

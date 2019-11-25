@@ -184,7 +184,7 @@ void handleApdu(volatile uint32_t *flags, volatile uint32_t *tx, uint32_t rx) {
                 }
 
                 case INS_GET_ADDR_ED25519: {
-                    extractBip44(rx, OFFSET_DATA + 1);
+                    extractBip44(rx, OFFSET_DATA);
 
                     uint8_t requireConfirmation = G_io_apdu_buffer[OFFSET_P1];
 

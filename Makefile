@@ -24,7 +24,7 @@ include $(BOLOS_SDK)/Makefile.defines
 # Main app configuration
 APPNAME = "Oasis"
 APPVERSION_M=0
-APPVERSION_N=2
+APPVERSION_N=3
 APPVERSION_P=0
 
 APP_LOAD_PARAMS = --appFlags 0x200 --delete $(COMMON_LOAD_PARAMS) --path "44'/118'"
