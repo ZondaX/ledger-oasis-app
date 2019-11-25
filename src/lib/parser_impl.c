@@ -70,13 +70,8 @@ const char *parser_getErrorDescription(parser_error_t err) {
             return "Unexpected characters";
         case parser_unexpected_field:
             return "Unexpected field";
-        case parser_duplicated_field:
-            return "Unexpected duplicated field";
         case parser_value_out_of_range:
             return "Value out of range";
-        case parser_unexpected_chain:
-            return "Unexpected chain";
-
         case parser_cbor_unexpected:
             return "unexpected CBOR error";
 
@@ -231,7 +226,7 @@ __Z_INLINE parser_error_t _readBody(parser_tx_t *v, CborValue *value) {
             CHECK_CBOR_ERR(cbor_value_advance(&contents));
             break;
         }
-        case stakingAmendComissionSchedule:
+        case stakingAmendCommissionSchedule:
             // FIXME: complete this
         case unknownMethod:
         default:
@@ -341,7 +336,7 @@ uint8_t _getNumItems(parser_context_t *c, parser_tx_t *v) {
         case stakingReclaimEscrow:
             itemCount += 2;
             break;
-        case stakingAmendComissionSchedule:
+        case stakingAmendCommissionSchedule:
             break;
         case unknownMethod:
         default:

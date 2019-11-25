@@ -66,7 +66,7 @@ __Z_INLINE parser_error_t parser_getType(parser_context_t *ctx, char *outVal, ui
         case stakingReclaimEscrow:
             snprintf(outVal, outValLen, "Reclaim escrow");
             return parser_ok;
-        case stakingAmendComissionSchedule:
+        case stakingAmendCommissionSchedule:
             snprintf(outVal, outValLen, "Amend comission schedule");
             return parser_ok;
         case unknownMethod:
@@ -207,7 +207,7 @@ parser_error_t parser_getItem(parser_context_t *ctx,
                     return parser_no_data;
             }
             break;
-        case stakingAmendComissionSchedule:
+        case stakingAmendCommissionSchedule:
             // FIXME: Complete
             break;
         case unknownMethod:
