@@ -29,9 +29,10 @@ typedef enum {
     parser_unexpected_method,
     parser_unexpected_buffer_end,
     parser_unexpected_value,
-
+    parser_unexpected_number_items,
+    parser_unexpected_data_at_end,
     parser_init_context_empty,
-    parser_unexpected_version,
+
     parser_unexpected_characters,
     parser_unexpected_field,
     parser_duplicated_field,

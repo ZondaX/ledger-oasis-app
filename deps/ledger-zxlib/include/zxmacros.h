@@ -20,6 +20,7 @@
 extern "C" {
 #endif
 
+#include "stdio.h" // snprintf
 #include "string.h"
 extern void explicit_bzero (void *__s, size_t __n) __THROW __nonnull ((1));
 

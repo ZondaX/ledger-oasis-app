@@ -54,12 +54,18 @@ const char *parser_getErrorDescription(parser_error_t err) {
             return "No more data";
         case parser_unexpected_type:
             return "Unexpected data type";
-        case parser_init_context_empty:
-            return "Initialized empty context";
+        case parser_unexpected_method:
+            return "Unexpected method";
         case parser_unexpected_buffer_end:
             return "Unexpected buffer end";
-        case parser_unexpected_version:
-            return "Unexpected version";
+        case parser_unexpected_value:
+            return "Unexpected value";
+        case parser_unexpected_number_items:
+            return "Unexpected number of items";
+        case parser_unexpected_data_at_end:
+            return "Unexpected data at end";
+        case parser_init_context_empty:
+            return "Initialized empty context";
         case parser_unexpected_characters:
             return "Unexpected characters";
         case parser_unexpected_field:
@@ -87,7 +93,7 @@ const char *parser_getErrorDescription(parser_error_t err) {
 // FIXME: Correct error - incorrect number of items
 #define CHECK_CBOR_MAP_LEN(map, expected_count) { \
     size_t numItems; CHECK_CBOR_ERR(cbor_value_get_map_length(map, &numItems)); \
-    if (numItems != expected_count)  return parser_unexpected_buffer_end; }
+    if (numItems != expected_count)  return parser_unexpected_number_items; }
 
 #define CHECK_CBOR_MATCH_KEY(value, expected_key) \
     if (!_matchKey(value, expected_key)) return parser_unexpected_field;
@@ -184,7 +190,7 @@ __Z_INLINE parser_error_t _readBody(parser_tx_t *v, CborValue *value) {
             CHECK_CBOR_ERR(cbor_value_advance(&contents));
             break;
         }
-        case stakingBurn:{
+        case stakingBurn: {
             CHECK_CBOR_MAP_LEN(value, 1);
             CHECK_CBOR_ERR(cbor_value_enter_container(value, &contents));
 
@@ -194,7 +200,7 @@ __Z_INLINE parser_error_t _readBody(parser_tx_t *v, CborValue *value) {
             CHECK_CBOR_ERR(cbor_value_advance(&contents));
             break;
         }
-        case stakingAddEscrow:{
+        case stakingAddEscrow: {
             CHECK_CBOR_MAP_LEN(value, 2);
             CHECK_CBOR_ERR(cbor_value_enter_container(value, &contents));
 
@@ -209,7 +215,7 @@ __Z_INLINE parser_error_t _readBody(parser_tx_t *v, CborValue *value) {
             CHECK_CBOR_ERR(cbor_value_advance(&contents));
             break;
         }
-        case stakingReclaimEscrow:{
+        case stakingReclaimEscrow: {
             CHECK_CBOR_MAP_LEN(value, 2);
             CHECK_CBOR_ERR(cbor_value_enter_container(value, &contents));
 
@@ -304,6 +310,11 @@ parser_error_t _readTx(parser_context_t *c, parser_tx_t *v) {
     // Close container
     CHECK_CBOR_ERR(cbor_value_leave_container(&it, &contents));
 
+    if (it.ptr != c->buffer + c->bufferLen) {
+        // End of buffer does not match end of parsed data
+        return parser_unexpected_data_at_end;
+    }
+
     return parser_ok;
 }
 
@@ -318,16 +329,16 @@ uint8_t _getNumItems(parser_context_t *c, parser_tx_t *v) {
 
     switch (v->oasis_tx.method) {
         case stakingTransfer:
-            itemCount +=2;
+            itemCount += 2;
             break;
         case stakingBurn:
-            itemCount +=1;
+            itemCount += 1;
             break;
         case stakingAddEscrow:
-            itemCount +=2;
+            itemCount += 2;
             break;
         case stakingReclaimEscrow:
-            itemCount +=2;
+            itemCount += 2;
             break;
         case stakingAmendComissionSchedule:
             break;
