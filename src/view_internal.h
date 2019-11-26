@@ -26,11 +26,12 @@
 #define MENU_MAIN_APP_LINE2 "DRAFT Version"
 #endif
 
+#define CUR_FLOW G_ux.flow_stack[G_ux.stack_count-1]
+
 #if defined(TARGET_NANOX)
 #define MAX_CHARS_PER_KEY_LINE      64
 #define MAX_CHARS_PER_VALUE1_LINE   4096
 #define MAX_CHARS_HEXMESSAGE        160
-#define CUR_FLOW G_ux.flow_stack[G_ux.stack_count-1]
 #else
 #define MAX_CHARS_PER_KEY_LINE      (32+1)
 #define MAX_CHARS_PER_VALUE_LINE    (18)
@@ -110,3 +111,5 @@ void h_review_increase();
 void h_review_decrease();
 
 view_error_t h_review_update_data();
+
+view_error_t h_addr_update_item(uint8_t idx);

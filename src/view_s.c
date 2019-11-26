@@ -48,13 +48,19 @@ const ux_menu_entry_t menu_main[] = {
     UX_MENU_END
 };
 
-UX_STEP_NOCB(ux_addr_flow_1_step, bnnn_paging, { .title = "Address", .text = viewdata.addr, });
-UX_STEP_VALID(ux_addr_flow_2_step, pb, h_address_accept(0), { &C_icon_validate_14, "Ok"});
+UX_STEP_NOCB_INIT(ux_addr_flow_1_step, paging,
+        { h_addr_update_item(CUR_FLOW.index); },
+        { .title = "Address", .text = viewdata.addr, });
+UX_STEP_NOCB_INIT(ux_addr_flow_2_step, paging,
+        { h_addr_update_item(CUR_FLOW.index); },
+        { .title = "Path", .text = viewdata.addr, });
+UX_STEP_VALID(ux_addr_flow_3_step, pb, h_address_accept(0), { &C_icon_validate_14, "Ok"});
 
 UX_FLOW(
     ux_addr_flow,
     &ux_addr_flow_1_step,
-    &ux_addr_flow_2_step
+    &ux_addr_flow_2_step,
+    &ux_addr_flow_3_step
 );
 
 void h_review(unsigned int _) { UNUSED(_); view_sign_show_impl(); }
@@ -188,7 +194,7 @@ void view_idle_show_impl() {
 }
 
 void view_address_show_impl() {
-    ux_layout_bnnn_paging_reset();
+    ux_layout_paging_reset();
     if(G_ux.stack_count == 0) {
         ux_stack_push();
     }

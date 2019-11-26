@@ -24,7 +24,7 @@ include $(BOLOS_SDK)/Makefile.defines
 # Main app configuration
 APPNAME = "Oasis"
 APPVERSION_M=0
-APPVERSION_N=3
+APPVERSION_N=4
 APPVERSION_P=0
 
 APP_LOAD_PARAMS = --appFlags 0x200 --delete $(COMMON_LOAD_PARAMS) --path "44'/118'"
@@ -138,12 +138,8 @@ INCLUDES_PATH += deps/tinycbor/src
 SOURCE_FILES += deps/tinycbor/src/cborparser.c
 endif
 
-ifeq ($(TARGET_NAME),TARGET_NANOX)
 #SDK_SOURCE_PATH  += lib_blewbxx lib_blewbxx_impl
 SDK_SOURCE_PATH  += lib_ux
-else
-SDK_SOURCE_PATH  += lib_ux
-endif
 
 load:
 	sudo -E python3 -m ledgerblue.loadApp $(APP_LOAD_PARAMS)
