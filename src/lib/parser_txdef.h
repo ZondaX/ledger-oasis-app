@@ -48,8 +48,9 @@ typedef struct {
 } commissionRateStep_t;
 
 typedef struct {
-    uint8_t buffer[64];
-    size_t len;
+    epochTime_t start;
+    quantity_t rate_max;
+    quantity_t rate_min; 
 } commissionRateBoundStep_t;
 
 typedef struct {
@@ -78,8 +79,8 @@ typedef struct {
         } stakingReclaimEscrow;
 
         struct {
-            commissionRateStep_t rates;
-            commissionRateBoundStep_t bounds;
+            commissionRateStep_t *rates;
+            commissionRateBoundStep_t *bounds;
         } stakingAmendCommissionSchedule;
     } body;
 

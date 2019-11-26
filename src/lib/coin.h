@@ -33,6 +33,8 @@ extern "C" {
 #define COIN_AMOUNT_DECIMAL_PLACES 9
 #define COIN_RATE_DECIMAL_PLACES 5
 
+#define MAX_RATES           10
+
 #ifdef __cplusplus
 }
 #endif

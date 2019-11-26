@@ -123,6 +123,143 @@ __Z_INLINE parser_error_t _readQuantity(CborValue *value, quantity_t *out) {
     return parser_ok;
 }
 
+__Z_INLINE parser_error_t _readRate(CborValue *value, commissionRateStep_t *out) {
+//      {
+//        "rate": "0",
+//        "start": 0
+//      }
+//  canonical cbor orders keys by length
+// https://tools.ietf.org/html/rfc7049#section-3.9
+
+    CborValue contents;
+    CHECK_CBOR_TYPE(cbor_value_get_type(value), CborMapType);
+    CHECK_CBOR_MAP_LEN(value, 2);
+    CHECK_CBOR_ERR(cbor_value_enter_container(value, &contents));
+
+    CHECK_CBOR_MATCH_KEY(&contents, "rate")
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+    CHECK_CBOR_ERR(_readQuantity(&contents, &out->rate))
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+
+    CHECK_CBOR_MATCH_KEY(&contents, "start");
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+    CHECK_CBOR_TYPE(cbor_value_get_type(&contents), CborIntegerType);
+    CHECK_CBOR_ERR(cbor_value_get_uint64(&contents, &out->start));
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+
+    CHECK_CBOR_ERR(cbor_value_leave_container(value, &contents));
+
+    return parser_ok;
+}
+
+__Z_INLINE parser_error_t _readBound(CborValue *value, commissionRateBoundStep_t *out) {
+//  {
+//    "start": 0,
+//    "rate_min": "0",
+//    "rate_max": "0"
+//  }
+//  canonical cbor orders keys by length
+// https://tools.ietf.org/html/rfc7049#section-3.9
+
+    CborValue contents;
+    CHECK_CBOR_TYPE(cbor_value_get_type(value), CborMapType);
+    CHECK_CBOR_MAP_LEN(value, 3);
+    CHECK_CBOR_ERR(cbor_value_enter_container(value, &contents));
+
+    CHECK_CBOR_MATCH_KEY(&contents, "start");
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+    CHECK_CBOR_TYPE(cbor_value_get_type(&contents), CborIntegerType);
+    CHECK_CBOR_ERR(cbor_value_get_uint64(&contents, &out->start));
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+
+    CHECK_CBOR_MATCH_KEY(&contents, "rate_max")
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+    CHECK_CBOR_ERR(_readQuantity(&contents, &out->rate_max))
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+
+    CHECK_CBOR_MATCH_KEY(&contents, "rate_min")
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+    CHECK_CBOR_ERR(_readQuantity(&contents, &out->rate_min))
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+
+    CHECK_CBOR_ERR(cbor_value_leave_container(value, &contents));
+
+    return parser_ok;
+}
+
+__Z_INLINE parser_error_t _readAmendment(parser_tx_t *v, CborValue *value) {
+//  {
+//    "rates": [
+//     ...
+//    ],
+//    "bounds": [
+//      {
+//        "start": 0,
+//        "rate_min": "0",
+//        "rate_max": "0"
+//      }
+//    ]
+//  }
+
+    /// Enter container
+    CborValue contents;
+    CHECK_CBOR_TYPE(cbor_value_get_type(value), CborMapType);
+    CHECK_CBOR_MAP_LEN(value, 2);
+    CHECK_CBOR_ERR(cbor_value_enter_container(value, &contents));
+
+    CHECK_CBOR_MATCH_KEY(&contents, "rates");
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+    CHECK_CBOR_TYPE(cbor_value_get_type(&contents), CborArrayType);
+    // Array of rates
+    //
+    size_t rates_length;
+    cbor_value_get_array_length(&contents, &rates_length);
+
+    CborValue arrayContainer;
+    commissionRateStep_t rates[rates_length];
+
+    CHECK_CBOR_ERR(cbor_value_enter_container(&contents, &arrayContainer));
+
+    int rate_index;
+    for (rate_index = 0; rate_index < rates_length; rate_index = rate_index + 1) {
+      CHECK_CBOR_ERR(_readRate(&arrayContainer, &rates[rate_index]));
+      // Ok we might need this here
+      // CHECK_CBOR_ERR(cbor_value_advance(&arrayContainer));
+    }
+
+
+    CHECK_CBOR_ERR(cbor_value_leave_container(&contents, &arrayContainer));
+
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+
+    CHECK_CBOR_MATCH_KEY(&contents, "bounds");
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+    CHECK_CBOR_TYPE(cbor_value_get_type(&contents), CborArrayType);
+
+    // Array of bounds
+    //
+
+    size_t bounds_length;
+    cbor_value_get_array_length(&contents, &bounds_length);
+
+    commissionRateBoundStep_t bounds[bounds_length];
+
+    CHECK_CBOR_ERR(cbor_value_enter_container(&contents, &arrayContainer));
+
+    int bound_index;
+    for (bound_index = 0; bound_index < bounds_length; bound_index = bound_index + 1) {
+      // READ RATE
+      CHECK_CBOR_ERR(_readBound(&arrayContainer, &bounds[bound_index]));
+      // CHECK_CBOR_ERR(cbor_value_advance(&arrayContainer));
+    }
+
+
+    // Close container
+    //CHECK_CBOR_ERR(cbor_value_leave_container(value, &contents));
+
+    return parser_ok;
+}
+
 __Z_INLINE parser_error_t _readFee(parser_tx_t *v, CborValue *value) {
 //    "fee": {
 //        "gas": 0,
@@ -227,7 +364,15 @@ __Z_INLINE parser_error_t _readBody(parser_tx_t *v, CborValue *value) {
             break;
         }
         case stakingAmendCommissionSchedule:
+            CHECK_CBOR_MAP_LEN(value, 1);
+            CHECK_CBOR_ERR(cbor_value_enter_container(value, &contents));
+
+            CHECK_CBOR_MATCH_KEY(&contents, "amendment");
+            CHECK_CBOR_ERR(cbor_value_advance(&contents));
+            CHECK_PARSER_ERR(_readAmendment(v, &contents))
+            CHECK_CBOR_ERR(cbor_value_advance(&contents));
             // FIXME: complete this
+            break;
         case unknownMethod:
         default:
             return parser_unexpected_method;
@@ -262,6 +407,8 @@ __Z_INLINE parser_error_t _readMethod(parser_tx_t *v, CborValue *value) {
         v->oasis_tx.method = stakingAddEscrow;
     if (_matchKey(value, "staking.ReclaimEscrow"))
         v->oasis_tx.method = stakingReclaimEscrow;
+    if (_matchKey(value, "staking.AmendCommissionSchedule"))
+        v->oasis_tx.method = stakingAmendCommissionSchedule;
 
     // FIXME: Add other methods
 
@@ -337,6 +484,7 @@ uint8_t _getNumItems(parser_context_t *c, parser_tx_t *v) {
             itemCount += 2;
             break;
         case stakingAmendCommissionSchedule:
+            itemCount +=1;
             break;
         case unknownMethod:
         default:
