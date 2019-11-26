@@ -95,8 +95,10 @@ const char *parser_getErrorDescription(parser_error_t err) {
     size_t numItems; CHECK_CBOR_ERR(cbor_value_get_map_length(map, &numItems)); \
     if (numItems != expected_count)  return parser_unexpected_number_items; }
 
-#define CHECK_CBOR_MATCH_KEY(value, expected_key) \
-    if (!_matchKey(value, expected_key)) return parser_unexpected_field;
+#define CHECK_CBOR_MATCH_KEY(value, expected_key) { \
+  CHECK_CBOR_TYPE(cbor_value_get_type(value), CborTextStringType); \
+  if (!_matchKey(value, expected_key)) return parser_unexpected_field; \
+}
 
 __Z_INLINE parser_error_t _matchKey(CborValue *value, const char *expectedKey) {
     CHECK_CBOR_TYPE(cbor_value_get_type(value), CborTextStringType);
