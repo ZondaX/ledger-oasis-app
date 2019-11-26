@@ -38,15 +38,23 @@
 #define MAX_CHARS_PER_VALUE2_LINE   (MAX_CHARS_PER_VALUE_LINE+1)
 #define MAX_CHARS_HEXMESSAGE        40
 #endif
+#define MAX_CHARS_ADDR              (MAX_CHARS_PER_KEY_LINE + MAX_CHARS_PER_VALUE1_LINE)
 
-extern const char *address;
+// This typically will point to G_io_apdu_buffer that is prefilled with the address
 
 typedef struct {
-    char key[MAX_CHARS_PER_KEY_LINE];
-    char value[MAX_CHARS_PER_VALUE1_LINE];
+    union {
+        struct {
+            char key[MAX_CHARS_PER_KEY_LINE];
+            char value[MAX_CHARS_PER_VALUE1_LINE];
 #if defined(TARGET_NANOS)
-    char value2[MAX_CHARS_PER_VALUE2_LINE];
+            char value2[MAX_CHARS_PER_VALUE2_LINE];
 #endif
+        };
+        struct {
+            char addr[MAX_CHARS_ADDR];
+        };
+    };
     int8_t idx;
     int8_t pageIdx;
     uint8_t pageCount;

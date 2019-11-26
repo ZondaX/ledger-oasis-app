@@ -51,7 +51,7 @@ const ux_flow_step_t *const ux_idle_flow [] = {
 
 ///////////
 
-UX_STEP_NOCB(ux_addr_flow_1_step, bnnn_paging, { .title = viewdata.key, .text = viewdata.value, });
+UX_STEP_NOCB(ux_addr_flow_1_step, bnnn_paging, { .title = "Address", .text = viewdata.addr, });
 UX_STEP_VALID(ux_addr_flow_2_step, pb, h_address_accept(0), { &C_icon_validate_14, "Ok"});
 
 UX_FLOW(
@@ -187,9 +187,6 @@ void view_idle_show_impl() {
 }
 
 void view_address_show_impl() {
-    snprintf(viewdata.key, MAX_CHARS_PER_KEY_LINE, "Confirm address");
-    snprintf(viewdata.value, MAX_CHARS_PER_VALUE1_LINE, "%s", address);
-
     ux_layout_bnnn_paging_reset();
     if(G_ux.stack_count == 0) {
         ux_stack_push();

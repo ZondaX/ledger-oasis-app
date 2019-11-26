@@ -17,6 +17,7 @@
 
 #include "view.h"
 #include "view_internal.h"
+#include "crypto.h"
 
 #include "actions.h"
 #include "apdu_codes.h"
@@ -30,7 +31,6 @@
 #include <stdio.h>
 
 view_t viewdata;
-const char *address;
 
 void h_address_accept(unsigned int _) {
     UNUSED(_);
@@ -129,7 +129,7 @@ void view_idle_show(unsigned int ignored) {
 
 void view_address_show() {
     // Address has been placed in the output buffer
-    address = (char *) (G_io_apdu_buffer + 32);
+    snprintf(viewdata.addr, MAX_CHARS_ADDR, "%s", (char *) (G_io_apdu_buffer + PK_LEN));
     view_address_show_impl();
 }
 
