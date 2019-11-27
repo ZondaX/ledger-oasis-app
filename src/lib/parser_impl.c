@@ -172,10 +172,14 @@ __Z_INLINE parser_error_t _readBound(CborValue *value, commissionRateBoundStep_t
     CHECK_CBOR_ERR(cbor_value_get_uint64(&contents, &out->start));
     CHECK_CBOR_ERR(cbor_value_advance(&contents));
 
+    printf(" START VALUE %lu \n", out->start);
+
     CHECK_CBOR_MATCH_KEY(&contents, "rate_max")
     CHECK_CBOR_ERR(cbor_value_advance(&contents));
     CHECK_CBOR_ERR(_readQuantity(&contents, &out->rate_max))
     CHECK_CBOR_ERR(cbor_value_advance(&contents));
+
+    printf(" RATE MAX LEN %lu \n", out->rate_max.len);
 
     CHECK_CBOR_MATCH_KEY(&contents, "rate_min")
     CHECK_CBOR_ERR(cbor_value_advance(&contents));
@@ -183,6 +187,8 @@ __Z_INLINE parser_error_t _readBound(CborValue *value, commissionRateBoundStep_t
     CHECK_CBOR_ERR(cbor_value_advance(&contents));
 
     CHECK_CBOR_ERR(cbor_value_leave_container(value, &contents));
+
+    printf("Success \n");
 
     return parser_ok;
 }
@@ -210,8 +216,8 @@ __Z_INLINE parser_error_t _readAmendment(parser_tx_t *v, CborValue *value) {
     CHECK_CBOR_MATCH_KEY(&contents, "rates");
     CHECK_CBOR_ERR(cbor_value_advance(&contents));
     CHECK_CBOR_TYPE(cbor_value_get_type(&contents), CborArrayType);
+
     // Array of rates
-    //
     size_t rates_length;
     cbor_value_get_array_length(&contents, &rates_length);
 
@@ -223,14 +229,14 @@ __Z_INLINE parser_error_t _readAmendment(parser_tx_t *v, CborValue *value) {
     int rate_index;
     for (rate_index = 0; rate_index < rates_length; rate_index = rate_index + 1) {
       CHECK_CBOR_ERR(_readRate(&arrayContainer, &rates[rate_index]));
-      // Ok we might need this here
-      // CHECK_CBOR_ERR(cbor_value_advance(&arrayContainer));
+
+      if (!cbor_value_at_end(&arrayContainer))
+          CHECK_CBOR_ERR(cbor_value_advance(&arrayContainer));
     }
 
+    v->oasis_tx.body.stakingAmendCommissionSchedule.rates = rates;
 
     CHECK_CBOR_ERR(cbor_value_leave_container(&contents, &arrayContainer));
-
-    CHECK_CBOR_ERR(cbor_value_advance(&contents));
 
     CHECK_CBOR_MATCH_KEY(&contents, "bounds");
     CHECK_CBOR_ERR(cbor_value_advance(&contents));
@@ -248,11 +254,14 @@ __Z_INLINE parser_error_t _readAmendment(parser_tx_t *v, CborValue *value) {
 
     int bound_index;
     for (bound_index = 0; bound_index < bounds_length; bound_index = bound_index + 1) {
-      // READ RATE
       CHECK_CBOR_ERR(_readBound(&arrayContainer, &bounds[bound_index]));
-      // CHECK_CBOR_ERR(cbor_value_advance(&arrayContainer));
+      // VERIFY WITH cbor_value_at_end
+      // https://intel.github.io/tinycbor/current/a00047.html#ga49bd2a99edcceb72962eedc7584cd19c
+      if (!cbor_value_at_end(&arrayContainer))
+          CHECK_CBOR_ERR(cbor_value_advance(&arrayContainer));
     }
 
+    v->oasis_tx.body.stakingAmendCommissionSchedule.bounds = bounds;
 
     // Close container
     //CHECK_CBOR_ERR(cbor_value_leave_container(value, &contents));
@@ -363,7 +372,7 @@ __Z_INLINE parser_error_t _readBody(parser_tx_t *v, CborValue *value) {
             CHECK_CBOR_ERR(cbor_value_advance(&contents));
             break;
         }
-        case stakingAmendCommissionSchedule:
+        case stakingAmendCommissionSchedule: {
             CHECK_CBOR_MAP_LEN(value, 1);
             CHECK_CBOR_ERR(cbor_value_enter_container(value, &contents));
 
@@ -371,8 +380,8 @@ __Z_INLINE parser_error_t _readBody(parser_tx_t *v, CborValue *value) {
             CHECK_CBOR_ERR(cbor_value_advance(&contents));
             CHECK_PARSER_ERR(_readAmendment(v, &contents))
             CHECK_CBOR_ERR(cbor_value_advance(&contents));
-            // FIXME: complete this
             break;
+        }
         case unknownMethod:
         default:
             return parser_unexpected_method;
