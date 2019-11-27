@@ -90,7 +90,6 @@ const char *parser_getErrorDescription(parser_error_t err) {
 #define CHECK_PARSER_ERR(err) if (err!=parser_ok) return err;
 #define CHECK_CBOR_TYPE(type, expected) if (type!=expected) return parser_unexpected_type;
 
-// FIXME: Correct error - incorrect number of items
 #define CHECK_CBOR_MAP_LEN(map, expected_count) { \
     size_t numItems; CHECK_CBOR_ERR(cbor_value_get_map_length(map, &numItems)); \
     if (numItems != expected_count)  return parser_unexpected_number_items; }

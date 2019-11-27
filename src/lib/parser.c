@@ -79,22 +79,31 @@ __Z_INLINE parser_error_t parser_getType(parser_context_t *ctx, char *outVal, ui
 __Z_INLINE parser_error_t parser_printQuantity(quantity_t *q,
                                                char *outVal, uint16_t outValLen,
                                                uint8_t pageIdx, uint8_t *pageCount) {
-    uint8_t bcd_buffer[128];
-    char bignum_buffer[256];
+    // upperbound 2**(64*8)
+    // results in 155 decimal digits => max 78 bcd bytes
 
-    MEMZERO(bcd_buffer, sizeof(bcd_buffer));
-    MEMZERO(bignum_buffer, sizeof(bignum_buffer));
+    if (q->len > 64) {
+        // Too many digits, we cannot format this
+        return parser_value_out_of_range;
+    }
 
-    bignumBigEndian_to_bcd(bcd_buffer, sizeof(bcd_buffer), q->buffer, q->len);
+    char bignum[160];
+    union {
+        // overlapping arrays to avoid excessive stack usage. Do not use at the same time
+        uint8_t bcd[80];
+        char output[160];
+    } overlapped;
 
-    if (!bignumBigEndian_bcdprint(bignum_buffer,
-                                  sizeof(bignum_buffer),
-                                  bcd_buffer, sizeof(bcd_buffer)
-    )) {
+    MEMZERO(overlapped.bcd, sizeof(overlapped.bcd));
+    MEMZERO(bignum, sizeof(bignum));
+
+    bignumBigEndian_to_bcd(overlapped.bcd, sizeof(overlapped.bcd), q->buffer, q->len);
+    if (!bignumBigEndian_bcdprint(bignum, sizeof(bignum), overlapped.bcd, sizeof(overlapped.bcd))) {
         return parser_unexpected_value;
     }
 
-    pageString(outVal, outValLen, bignum_buffer, pageIdx, pageCount);
+    fpstr_to_str(overlapped.output, bignum, COIN_DECIMAL_PLACES);
+    pageString(outVal, outValLen, overlapped.output, pageIdx, pageCount);
     return parser_ok;
 }
 

@@ -1,5 +1,5 @@
 /*******************************************************************************
-*  (c) 2019 ZondaX GmbH
+*   (c) 2018 ZondaX GmbH
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
 *  you may not use this file except in compliance with the License.
@@ -13,25 +13,16 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-#pragma once
+#include <gmock/gmock.h>
+#include <zxmacros.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace {
+    TEST(MACROS, bip44path) {
+        uint32_t path[] = {44, 60, 0, 0, 1};
 
-#include <stdint.h>
-#include <stddef.h>
+        char buffer[100];
+        bip44_to_str(buffer, sizeof(buffer), path);
 
-#define BIP44_0_DEFAULT     (0x80000000 | 0x2c)
-#define BIP44_1_DEFAULT     (0x80000000 | 0x76)     // FIXME: Change derivation path
-#define BIP44_2_DEFAULT     (0x80000000 | 0)
-#define BIP44_3_DEFAULT     (0)
-#define BIP44_4_DEFAULT     (0)
-
-#define COIN_HRP            "oasis"
-#define COIN_HASH_CONTEXT   "oasis-core/consensus: tx for chain test-chain-id"
-#define COIN_DECIMAL_PLACES 9
-
-#ifdef __cplusplus
+        EXPECT_EQ("44/60/0/0/1", std::string(buffer));
+    }
 }
-#endif
