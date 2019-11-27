@@ -67,7 +67,7 @@ __Z_INLINE parser_error_t parser_getType(parser_context_t *ctx, char *outVal, ui
             snprintf(outVal, outValLen, "Reclaim escrow");
             return parser_ok;
         case stakingAmendCommissionSchedule:
-            snprintf(outVal, outValLen, "Amend comission schedule");
+            snprintf(outVal, outValLen, "Amend commission schedule");
             return parser_ok;
         case unknownMethod:
         default:
@@ -209,6 +209,48 @@ parser_error_t parser_getItem(parser_context_t *ctx,
             break;
         case stakingAmendCommissionSchedule:
             // FIXME: Complete
+
+            if ((displayIdx - 3) / 2 < parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.rates_length) {
+              // We are printing rates !
+              int8_t index = (displayIdx - 3) / 2;
+
+              switch ((displayIdx - 3) % 2) {
+                case 0: {
+                  snprintf(outKey, outKeyLen, "Rates : [%i] start", index);
+                  uint64_to_str(outVal, outValLen, parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.rates[index].start);
+                  return parser_ok;
+                }
+                case 1: {
+                  snprintf(outKey, outKeyLen, "Rates : [%i] rate", index);
+                  return parser_printQuantity(&parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.rates[index].rate,
+                                              outVal, outValLen, pageIdx, pageCount);
+                }
+              }
+
+
+            } else {
+              // We are printing bounds !
+              int8_t index = (displayIdx - 3) / 3;
+
+              switch ((displayIdx - 3 - parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.rates_length*2) % 3) {
+                case 0: {
+                  snprintf(outKey, outKeyLen, "Bounds : [%i] start", index);
+                  uint64_to_str(outVal, outValLen, parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.bounds[index].start);
+                  return parser_ok;
+                }
+                case 1: {
+                  snprintf(outKey, outKeyLen, "Bounds : [%i] min", index);
+                  return parser_printQuantity(&parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.bounds[index].rate_min,
+                                              outVal, outValLen, pageIdx, pageCount);
+                }
+                case 2: {
+                  snprintf(outKey, outKeyLen, "Bounds : [%i] max", index);
+                  return parser_printQuantity(&parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.bounds[index].rate_max,
+                                              outVal, outValLen, pageIdx, pageCount);
+                }
+              }
+            }
+
             break;
         case unknownMethod:
         default:

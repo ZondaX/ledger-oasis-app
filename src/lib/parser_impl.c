@@ -172,14 +172,10 @@ __Z_INLINE parser_error_t _readBound(CborValue *value, commissionRateBoundStep_t
     CHECK_CBOR_ERR(cbor_value_get_uint64(&contents, &out->start));
     CHECK_CBOR_ERR(cbor_value_advance(&contents));
 
-    printf(" START VALUE %lu \n", out->start);
-
     CHECK_CBOR_MATCH_KEY(&contents, "rate_max")
     CHECK_CBOR_ERR(cbor_value_advance(&contents));
     CHECK_CBOR_ERR(_readQuantity(&contents, &out->rate_max))
     CHECK_CBOR_ERR(cbor_value_advance(&contents));
-
-    printf(" RATE MAX LEN %lu \n", out->rate_max.len);
 
     CHECK_CBOR_MATCH_KEY(&contents, "rate_min")
     CHECK_CBOR_ERR(cbor_value_advance(&contents));
@@ -187,9 +183,7 @@ __Z_INLINE parser_error_t _readBound(CborValue *value, commissionRateBoundStep_t
     CHECK_CBOR_ERR(cbor_value_advance(&contents));
 
     CHECK_CBOR_ERR(cbor_value_leave_container(value, &contents));
-
-    printf("Success \n");
-
+    
     return parser_ok;
 }
 
@@ -218,23 +212,18 @@ __Z_INLINE parser_error_t _readAmendment(parser_tx_t *v, CborValue *value) {
     CHECK_CBOR_TYPE(cbor_value_get_type(&contents), CborArrayType);
 
     // Array of rates
-    size_t rates_length;
-    cbor_value_get_array_length(&contents, &rates_length);
+    cbor_value_get_array_length(&contents, &v->oasis_tx.body.stakingAmendCommissionSchedule.rates_length);
 
     CborValue arrayContainer;
-    commissionRateStep_t rates[rates_length];
-
     CHECK_CBOR_ERR(cbor_value_enter_container(&contents, &arrayContainer));
 
     int rate_index;
-    for (rate_index = 0; rate_index < rates_length; rate_index = rate_index + 1) {
-      CHECK_CBOR_ERR(_readRate(&arrayContainer, &rates[rate_index]));
+    for (rate_index = 0; rate_index < v->oasis_tx.body.stakingAmendCommissionSchedule.rates_length; rate_index += 1) {
+      CHECK_CBOR_ERR(_readRate(&arrayContainer, &v->oasis_tx.body.stakingAmendCommissionSchedule.rates[rate_index]));
 
       if (!cbor_value_at_end(&arrayContainer))
           CHECK_CBOR_ERR(cbor_value_advance(&arrayContainer));
     }
-
-    v->oasis_tx.body.stakingAmendCommissionSchedule.rates = rates;
 
     CHECK_CBOR_ERR(cbor_value_leave_container(&contents, &arrayContainer));
 
@@ -245,23 +234,18 @@ __Z_INLINE parser_error_t _readAmendment(parser_tx_t *v, CborValue *value) {
     // Array of bounds
     //
 
-    size_t bounds_length;
-    cbor_value_get_array_length(&contents, &bounds_length);
-
-    commissionRateBoundStep_t bounds[bounds_length];
+    cbor_value_get_array_length(&contents, &v->oasis_tx.body.stakingAmendCommissionSchedule.bounds_length);
 
     CHECK_CBOR_ERR(cbor_value_enter_container(&contents, &arrayContainer));
 
     int bound_index;
-    for (bound_index = 0; bound_index < bounds_length; bound_index = bound_index + 1) {
-      CHECK_CBOR_ERR(_readBound(&arrayContainer, &bounds[bound_index]));
+    for (bound_index = 0; bound_index < v->oasis_tx.body.stakingAmendCommissionSchedule.bounds_length; bound_index += 1) {
+      CHECK_CBOR_ERR(_readBound(&arrayContainer, &v->oasis_tx.body.stakingAmendCommissionSchedule.bounds[bound_index]));
       // VERIFY WITH cbor_value_at_end
       // https://intel.github.io/tinycbor/current/a00047.html#ga49bd2a99edcceb72962eedc7584cd19c
       if (!cbor_value_at_end(&arrayContainer))
           CHECK_CBOR_ERR(cbor_value_advance(&arrayContainer));
     }
-
-    v->oasis_tx.body.stakingAmendCommissionSchedule.bounds = bounds;
 
     // Close container
     //CHECK_CBOR_ERR(cbor_value_leave_container(value, &contents));
@@ -380,6 +364,7 @@ __Z_INLINE parser_error_t _readBody(parser_tx_t *v, CborValue *value) {
             CHECK_CBOR_ERR(cbor_value_advance(&contents));
             CHECK_PARSER_ERR(_readAmendment(v, &contents))
             CHECK_CBOR_ERR(cbor_value_advance(&contents));
+
             break;
         }
         case unknownMethod:
@@ -418,9 +403,6 @@ __Z_INLINE parser_error_t _readMethod(parser_tx_t *v, CborValue *value) {
         v->oasis_tx.method = stakingReclaimEscrow;
     if (_matchKey(value, "staking.AmendCommissionSchedule"))
         v->oasis_tx.method = stakingAmendCommissionSchedule;
-
-    // FIXME: Add other methods
-
     if (v->oasis_tx.method == unknownMethod)
         return parser_unexpected_method;
 
@@ -493,7 +475,10 @@ uint8_t _getNumItems(parser_context_t *c, parser_tx_t *v) {
             itemCount += 2;
             break;
         case stakingAmendCommissionSchedule:
-            itemCount +=1;
+            // Each rate contains 2 items (start & rate)
+            itemCount += v->oasis_tx.body.stakingAmendCommissionSchedule.rates_length * 2;
+            // Each bound contains 3 items (start, rate_max & rate_min)
+            itemCount += v->oasis_tx.body.stakingAmendCommissionSchedule.bounds_length * 3;
             break;
         case unknownMethod:
         default:

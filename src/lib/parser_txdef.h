@@ -17,6 +17,7 @@
 
 #define CBOR_PARSER_MAX_RECURSIONS 4
 #include <cbor.h>
+#include <coin.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,7 +51,7 @@ typedef struct {
 typedef struct {
     epochTime_t start;
     quantity_t rate_max;
-    quantity_t rate_min; 
+    quantity_t rate_min;
 } commissionRateBoundStep_t;
 
 typedef struct {
@@ -79,8 +80,10 @@ typedef struct {
         } stakingReclaimEscrow;
 
         struct {
-            commissionRateStep_t *rates;
-            commissionRateBoundStep_t *bounds;
+            commissionRateStep_t rates[MAX_RATES];
+            size_t rates_length;
+            commissionRateBoundStep_t bounds[MAX_RATES];
+            size_t bounds_length;
         } stakingAmendCommissionSchedule;
     } body;
 
