@@ -102,7 +102,7 @@ __Z_INLINE parser_error_t parser_printQuantity(quantity_t *q,
         return parser_unexpected_value;
     }
 
-    fpstr_to_str(overlapped.output, bignum, COIN_DECIMAL_PLACES);
+    fpstr_to_str(overlapped.output, bignum, COIN_AMOUNT_DECIMAL_PLACES);
     pageString(outVal, outValLen, overlapped.output, pageIdx, pageCount);
     return parser_ok;
 }

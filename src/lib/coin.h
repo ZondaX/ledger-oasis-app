@@ -30,7 +30,8 @@ extern "C" {
 
 #define COIN_HRP            "oasis"
 #define COIN_HASH_CONTEXT   "oasis-core/consensus: tx for chain test-chain-id"
-#define COIN_DECIMAL_PLACES 9
+#define COIN_AMOUNT_DECIMAL_PLACES 9
+#define COIN_RATE_DECIMAL_PLACES 5
 
 #ifdef __cplusplus
 }
