@@ -76,16 +76,27 @@ __Z_INLINE parser_error_t parser_getType(parser_context_t *ctx, char *outVal, ui
     return parser_unexpected_method;
 }
 
+#define LESS_THAN_64_DIGIT(num_digit) if (num_digit > 64) return parser_value_out_of_range;
+
+__Z_INLINE bool format_quantity(quantity_t *q,
+                                uint8_t *bcd, uint16_t bcdSize,
+                                char *bignum, uint16_t bignumSize) {
+
+    bignumBigEndian_to_bcd(bcd, bcdSize, q->buffer, q->len);
+    if (!bignumBigEndian_bcdprint(bignum, bignumSize, bcd, bcdSize)) {
+      return false;
+    }
+    return true;
+}
+
 __Z_INLINE parser_error_t parser_printQuantity(quantity_t *q,
                                                char *outVal, uint16_t outValLen,
                                                uint8_t pageIdx, uint8_t *pageCount) {
     // upperbound 2**(64*8)
     // results in 155 decimal digits => max 78 bcd bytes
 
-    if (q->len > 64) {
-        // Too many digits, we cannot format this
-        return parser_value_out_of_range;
-    }
+    // Too many digits, we cannot format this
+    LESS_THAN_64_DIGIT(q->len);
 
     char bignum[160];
     union {
@@ -97,13 +108,40 @@ __Z_INLINE parser_error_t parser_printQuantity(quantity_t *q,
     MEMZERO(overlapped.bcd, sizeof(overlapped.bcd));
     MEMZERO(bignum, sizeof(bignum));
 
-    bignumBigEndian_to_bcd(overlapped.bcd, sizeof(overlapped.bcd), q->buffer, q->len);
-    if (!bignumBigEndian_bcdprint(bignum, sizeof(bignum), overlapped.bcd, sizeof(overlapped.bcd))) {
+    if (!format_quantity(q, overlapped.bcd, sizeof(overlapped.bcd), bignum, sizeof(bignum))) {
         return parser_unexpected_value;
     }
 
     fpstr_to_str(overlapped.output, bignum, COIN_AMOUNT_DECIMAL_PLACES);
     pageString(outVal, outValLen, overlapped.output, pageIdx, pageCount);
+    return parser_ok;
+}
+
+__Z_INLINE parser_error_t parser_printRate(quantity_t *q,
+                                               char *outVal, uint16_t outValLen,
+                                               uint8_t pageIdx, uint8_t *pageCount) {
+
+    // Too many digits, we cannot format this
+    LESS_THAN_64_DIGIT(q->len);
+
+    char bignum[160];
+    union {
+        // overlapping arrays to avoid excessive stack usage. Do not use at the same time
+        uint8_t bcd[80];
+        char output[160];
+    } overlapped;
+
+    MEMZERO(overlapped.bcd, sizeof(overlapped.bcd));
+    MEMZERO(bignum, sizeof(bignum));
+
+    if (!format_quantity(q, overlapped.bcd, sizeof(overlapped.bcd), bignum, sizeof(bignum))) {
+        return parser_unexpected_value;
+    }
+
+    fpstr_to_str(overlapped.output, bignum, COIN_RATE_DECIMAL_PLACES - 2);
+    overlapped.output[strlen(overlapped.output)] = '%';
+    pageString(outVal, outValLen, overlapped.output, pageIdx, pageCount);
+
     return parser_ok;
 }
 
@@ -222,7 +260,7 @@ parser_error_t parser_getItem(parser_context_t *ctx,
                 }
                 case 1: {
                   snprintf(outKey, outKeyLen, "Rates : [%i] rate", index);
-                  return parser_printQuantity(&parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.rates[index].rate,
+                  return parser_printRate(&parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.rates[index].rate,
                                               outVal, outValLen, pageIdx, pageCount);
                 }
               }
@@ -230,7 +268,7 @@ parser_error_t parser_getItem(parser_context_t *ctx,
 
             } else {
               // We are printing bounds !
-              int8_t index = (displayIdx - 3) / 3;
+              int8_t index = (displayIdx - 3 - parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.rates_length*2) / 3;
 
               switch ((displayIdx - 3 - parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.rates_length*2) % 3) {
                 case 0: {
@@ -240,12 +278,12 @@ parser_error_t parser_getItem(parser_context_t *ctx,
                 }
                 case 1: {
                   snprintf(outKey, outKeyLen, "Bounds : [%i] min", index);
-                  return parser_printQuantity(&parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.bounds[index].rate_min,
+                  return parser_printRate(&parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.bounds[index].rate_min,
                                               outVal, outValLen, pageIdx, pageCount);
                 }
                 case 2: {
                   snprintf(outKey, outKeyLen, "Bounds : [%i] max", index);
-                  return parser_printQuantity(&parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.bounds[index].rate_max,
+                  return parser_printRate(&parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.bounds[index].rate_max,
                                               outVal, outValLen, pageIdx, pageCount);
                 }
               }

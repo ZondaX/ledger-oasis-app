@@ -147,7 +147,7 @@ __Z_INLINE parser_error_t _readRate(CborValue *value, commissionRateStep_t *out)
     CHECK_CBOR_ERR(cbor_value_get_uint64(&contents, &out->start));
     CHECK_CBOR_ERR(cbor_value_advance(&contents));
 
-    CHECK_CBOR_ERR(cbor_value_leave_container(value, &contents));
+    //CHECK_CBOR_ERR(cbor_value_leave_container(value, &contents));
 
     return parser_ok;
 }
@@ -182,8 +182,8 @@ __Z_INLINE parser_error_t _readBound(CborValue *value, commissionRateBoundStep_t
     CHECK_CBOR_ERR(_readQuantity(&contents, &out->rate_min))
     CHECK_CBOR_ERR(cbor_value_advance(&contents));
 
-    CHECK_CBOR_ERR(cbor_value_leave_container(value, &contents));
-    
+    //CHECK_CBOR_ERR(cbor_value_leave_container(value, &contents));
+
     return parser_ok;
 }
 
@@ -217,12 +217,11 @@ __Z_INLINE parser_error_t _readAmendment(parser_tx_t *v, CborValue *value) {
     CborValue arrayContainer;
     CHECK_CBOR_ERR(cbor_value_enter_container(&contents, &arrayContainer));
 
-    int rate_index;
-    for (rate_index = 0; rate_index < v->oasis_tx.body.stakingAmendCommissionSchedule.rates_length; rate_index += 1) {
-      CHECK_CBOR_ERR(_readRate(&arrayContainer, &v->oasis_tx.body.stakingAmendCommissionSchedule.rates[rate_index]));
+    for (int i = 0; i < v->oasis_tx.body.stakingAmendCommissionSchedule.rates_length; i++) {
+      CHECK_CBOR_ERR(_readRate(&arrayContainer, &v->oasis_tx.body.stakingAmendCommissionSchedule.rates[i]));
 
       if (!cbor_value_at_end(&arrayContainer))
-          CHECK_CBOR_ERR(cbor_value_advance(&arrayContainer));
+        CHECK_CBOR_ERR(cbor_value_advance(&arrayContainer));
     }
 
     CHECK_CBOR_ERR(cbor_value_leave_container(&contents, &arrayContainer));
@@ -232,23 +231,16 @@ __Z_INLINE parser_error_t _readAmendment(parser_tx_t *v, CborValue *value) {
     CHECK_CBOR_TYPE(cbor_value_get_type(&contents), CborArrayType);
 
     // Array of bounds
-    //
-
     cbor_value_get_array_length(&contents, &v->oasis_tx.body.stakingAmendCommissionSchedule.bounds_length);
 
     CHECK_CBOR_ERR(cbor_value_enter_container(&contents, &arrayContainer));
 
-    int bound_index;
-    for (bound_index = 0; bound_index < v->oasis_tx.body.stakingAmendCommissionSchedule.bounds_length; bound_index += 1) {
-      CHECK_CBOR_ERR(_readBound(&arrayContainer, &v->oasis_tx.body.stakingAmendCommissionSchedule.bounds[bound_index]));
-      // VERIFY WITH cbor_value_at_end
-      // https://intel.github.io/tinycbor/current/a00047.html#ga49bd2a99edcceb72962eedc7584cd19c
+    for (int i = 0; i < v->oasis_tx.body.stakingAmendCommissionSchedule.bounds_length; i++) {
+      CHECK_CBOR_ERR(_readBound(&arrayContainer, &v->oasis_tx.body.stakingAmendCommissionSchedule.bounds[i]));
+
       if (!cbor_value_at_end(&arrayContainer))
           CHECK_CBOR_ERR(cbor_value_advance(&arrayContainer));
     }
-
-    // Close container
-    //CHECK_CBOR_ERR(cbor_value_leave_container(value, &contents));
 
     return parser_ok;
 }
