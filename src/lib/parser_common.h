@@ -37,6 +37,9 @@ typedef enum {
     parser_value_out_of_range,
     /////
     parser_cbor_unexpected,
+    /////
+    parser_display_idx_out_of_range,
+    parser_display_page_out_of_range
 } parser_error_t;
 
 typedef struct {
