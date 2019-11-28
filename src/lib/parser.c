@@ -246,10 +246,7 @@ parser_error_t parser_getItem(parser_context_t *ctx,
             }
             break;
         case stakingAmendCommissionSchedule:
-            // FIXME: Complete
-
             if ((displayIdx - 3) / 2 < parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.rates_length) {
-              // We are printing rates !
               int8_t index = (displayIdx - 3) / 2;
 
               switch ((displayIdx - 3) % 2) {
@@ -264,10 +261,7 @@ parser_error_t parser_getItem(parser_context_t *ctx,
                                               outVal, outValLen, pageIdx, pageCount);
                 }
               }
-
-
             } else {
-              // We are printing bounds !
               int8_t index = (displayIdx - 3 - parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.rates_length*2) / 3;
 
               switch ((displayIdx - 3 - parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.rates_length*2) % 3) {

@@ -147,8 +147,6 @@ __Z_INLINE parser_error_t _readRate(CborValue *value, commissionRateStep_t *out)
     CHECK_CBOR_ERR(cbor_value_get_uint64(&contents, &out->start));
     CHECK_CBOR_ERR(cbor_value_advance(&contents));
 
-    //CHECK_CBOR_ERR(cbor_value_leave_container(value, &contents));
-
     return parser_ok;
 }
 
@@ -182,8 +180,6 @@ __Z_INLINE parser_error_t _readBound(CborValue *value, commissionRateBoundStep_t
     CHECK_CBOR_ERR(_readQuantity(&contents, &out->rate_min))
     CHECK_CBOR_ERR(cbor_value_advance(&contents));
 
-    //CHECK_CBOR_ERR(cbor_value_leave_container(value, &contents));
-
     return parser_ok;
 }
 
@@ -193,11 +189,7 @@ __Z_INLINE parser_error_t _readAmendment(parser_tx_t *v, CborValue *value) {
 //     ...
 //    ],
 //    "bounds": [
-//      {
-//        "start": 0,
-//        "rate_min": "0",
-//        "rate_max": "0"
-//      }
+//     ...
 //    ]
 //  }
 
