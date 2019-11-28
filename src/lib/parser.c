@@ -44,7 +44,19 @@ parser_error_t parser_validate(parser_context_t *ctx) {
     if (err != parser_ok)
         return err;
 
-    // TODO: Iterate through all items to check that all can be shown and are valid
+    uint8_t numItems = parser_getNumItems(ctx);
+
+    char tmpKey[40];
+    char tmpVal[40];
+
+    for (uint8_t idx = 0; idx < numItems; idx++) {
+        uint8_t pageCount;
+        err = parser_getItem(ctx, idx, tmpKey, sizeof(tmpKey), tmpVal, sizeof(tmpVal), 0, &pageCount);
+        if (err != parser_ok) {
+            return err;
+        }
+    }
+
     return parser_ok;
 }
 
