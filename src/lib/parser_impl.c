@@ -70,13 +70,8 @@ const char *parser_getErrorDescription(parser_error_t err) {
             return "Unexpected characters";
         case parser_unexpected_field:
             return "Unexpected field";
-        case parser_duplicated_field:
-            return "Unexpected duplicated field";
         case parser_value_out_of_range:
             return "Value out of range";
-        case parser_unexpected_chain:
-            return "Unexpected chain";
-
         case parser_cbor_unexpected:
             return "unexpected CBOR error";
 
@@ -125,6 +120,120 @@ __Z_INLINE parser_error_t _readQuantity(CborValue *value, quantity_t *out) {
     MEMZERO(out, sizeof(quantity_t));
     out->len = sizeof_field(quantity_t, buffer);
     CHECK_CBOR_ERR(cbor_value_copy_byte_string(value, (uint8_t *) out->buffer, &out->len, &dummy));
+    return parser_ok;
+}
+
+__Z_INLINE parser_error_t _readRate(CborValue *value, commissionRateStep_t *out) {
+//      {
+//        "rate": "0",
+//        "start": 0
+//      }
+//  canonical cbor orders keys by length
+// https://tools.ietf.org/html/rfc7049#section-3.9
+
+    CborValue contents;
+    CHECK_CBOR_TYPE(cbor_value_get_type(value), CborMapType);
+    CHECK_CBOR_MAP_LEN(value, 2);
+    CHECK_CBOR_ERR(cbor_value_enter_container(value, &contents));
+
+    CHECK_CBOR_MATCH_KEY(&contents, "rate")
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+    CHECK_CBOR_ERR(_readQuantity(&contents, &out->rate))
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+
+    CHECK_CBOR_MATCH_KEY(&contents, "start");
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+    CHECK_CBOR_TYPE(cbor_value_get_type(&contents), CborIntegerType);
+    CHECK_CBOR_ERR(cbor_value_get_uint64(&contents, &out->start));
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+
+    return parser_ok;
+}
+
+__Z_INLINE parser_error_t _readBound(CborValue *value, commissionRateBoundStep_t *out) {
+//  {
+//    "start": 0,
+//    "rate_min": "0",
+//    "rate_max": "0"
+//  }
+//  canonical cbor orders keys by length
+// https://tools.ietf.org/html/rfc7049#section-3.9
+
+    CborValue contents;
+    CHECK_CBOR_TYPE(cbor_value_get_type(value), CborMapType);
+    CHECK_CBOR_MAP_LEN(value, 3);
+    CHECK_CBOR_ERR(cbor_value_enter_container(value, &contents));
+
+    CHECK_CBOR_MATCH_KEY(&contents, "start");
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+    CHECK_CBOR_TYPE(cbor_value_get_type(&contents), CborIntegerType);
+    CHECK_CBOR_ERR(cbor_value_get_uint64(&contents, &out->start));
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+
+    CHECK_CBOR_MATCH_KEY(&contents, "rate_max")
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+    CHECK_CBOR_ERR(_readQuantity(&contents, &out->rate_max))
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+
+    CHECK_CBOR_MATCH_KEY(&contents, "rate_min")
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+    CHECK_CBOR_ERR(_readQuantity(&contents, &out->rate_min))
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+
+    return parser_ok;
+}
+
+__Z_INLINE parser_error_t _readAmendment(parser_tx_t *v, CborValue *value) {
+//  {
+//    "rates": [
+//     ...
+//    ],
+//    "bounds": [
+//     ...
+//    ]
+//  }
+
+    /// Enter container
+    CborValue contents;
+    CHECK_CBOR_TYPE(cbor_value_get_type(value), CborMapType);
+    CHECK_CBOR_MAP_LEN(value, 2);
+    CHECK_CBOR_ERR(cbor_value_enter_container(value, &contents));
+
+    CHECK_CBOR_MATCH_KEY(&contents, "rates");
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+    CHECK_CBOR_TYPE(cbor_value_get_type(&contents), CborArrayType);
+
+    // Array of rates
+    cbor_value_get_array_length(&contents, &v->oasis_tx.body.stakingAmendCommissionSchedule.rates_length);
+
+    CborValue arrayContainer;
+    CHECK_CBOR_ERR(cbor_value_enter_container(&contents, &arrayContainer));
+
+    for (int i = 0; i < v->oasis_tx.body.stakingAmendCommissionSchedule.rates_length; i++) {
+      CHECK_CBOR_ERR(_readRate(&arrayContainer, &v->oasis_tx.body.stakingAmendCommissionSchedule.rates[i]));
+
+      if (!cbor_value_at_end(&arrayContainer))
+        CHECK_CBOR_ERR(cbor_value_advance(&arrayContainer));
+    }
+
+    CHECK_CBOR_ERR(cbor_value_leave_container(&contents, &arrayContainer));
+
+    CHECK_CBOR_MATCH_KEY(&contents, "bounds");
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+    CHECK_CBOR_TYPE(cbor_value_get_type(&contents), CborArrayType);
+
+    // Array of bounds
+    cbor_value_get_array_length(&contents, &v->oasis_tx.body.stakingAmendCommissionSchedule.bounds_length);
+
+    CHECK_CBOR_ERR(cbor_value_enter_container(&contents, &arrayContainer));
+
+    for (int i = 0; i < v->oasis_tx.body.stakingAmendCommissionSchedule.bounds_length; i++) {
+      CHECK_CBOR_ERR(_readBound(&arrayContainer, &v->oasis_tx.body.stakingAmendCommissionSchedule.bounds[i]));
+
+      if (!cbor_value_at_end(&arrayContainer))
+          CHECK_CBOR_ERR(cbor_value_advance(&arrayContainer));
+    }
+
     return parser_ok;
 }
 
@@ -231,8 +340,17 @@ __Z_INLINE parser_error_t _readBody(parser_tx_t *v, CborValue *value) {
             CHECK_CBOR_ERR(cbor_value_advance(&contents));
             break;
         }
-        case stakingAmendComissionSchedule:
-            // FIXME: complete this
+        case stakingAmendCommissionSchedule: {
+            CHECK_CBOR_MAP_LEN(value, 1);
+            CHECK_CBOR_ERR(cbor_value_enter_container(value, &contents));
+
+            CHECK_CBOR_MATCH_KEY(&contents, "amendment");
+            CHECK_CBOR_ERR(cbor_value_advance(&contents));
+            CHECK_PARSER_ERR(_readAmendment(v, &contents))
+            CHECK_CBOR_ERR(cbor_value_advance(&contents));
+
+            break;
+        }
         case unknownMethod:
         default:
             return parser_unexpected_method;
@@ -267,9 +385,8 @@ __Z_INLINE parser_error_t _readMethod(parser_tx_t *v, CborValue *value) {
         v->oasis_tx.method = stakingAddEscrow;
     if (_matchKey(value, "staking.ReclaimEscrow"))
         v->oasis_tx.method = stakingReclaimEscrow;
-
-    // FIXME: Add other methods
-
+    if (_matchKey(value, "staking.AmendCommissionSchedule"))
+        v->oasis_tx.method = stakingAmendCommissionSchedule;
     if (v->oasis_tx.method == unknownMethod)
         return parser_unexpected_method;
 
@@ -341,7 +458,11 @@ uint8_t _getNumItems(parser_context_t *c, parser_tx_t *v) {
         case stakingReclaimEscrow:
             itemCount += 2;
             break;
-        case stakingAmendComissionSchedule:
+        case stakingAmendCommissionSchedule:
+            // Each rate contains 2 items (start & rate)
+            itemCount += v->oasis_tx.body.stakingAmendCommissionSchedule.rates_length * 2;
+            // Each bound contains 3 items (start, rate_max & rate_min)
+            itemCount += v->oasis_tx.body.stakingAmendCommissionSchedule.bounds_length * 3;
             break;
         case unknownMethod:
         default:

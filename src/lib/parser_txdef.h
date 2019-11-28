@@ -17,6 +17,7 @@
 
 #define CBOR_PARSER_MAX_RECURSIONS 4
 #include <cbor.h>
+#include <coin.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,7 +32,7 @@ typedef enum {
     stakingBurn,
     stakingAddEscrow,
     stakingReclaimEscrow,
-    stakingAmendComissionSchedule
+    stakingAmendCommissionSchedule
 } oasis_methods_e;
 
 typedef uint8_t publickey_t[32];
@@ -39,6 +40,19 @@ typedef struct {
     uint8_t buffer[64];
     size_t len;
 } quantity_t;
+
+typedef uint64_t epochTime_t;
+
+typedef struct {
+    epochTime_t start;
+    quantity_t rate;                            // FIXME: Number of decimals
+} commissionRateStep_t;
+
+typedef struct {
+    epochTime_t start;
+    quantity_t rate_max;
+    quantity_t rate_min;
+} commissionRateBoundStep_t;
 
 typedef struct {
     uint64_t fee_gas;
@@ -66,7 +80,10 @@ typedef struct {
         } stakingReclaimEscrow;
 
         struct {
-            const char *reclaim_shares;
+            commissionRateStep_t rates[MAX_RATES];
+            size_t rates_length;
+            commissionRateBoundStep_t bounds[MAX_RATES];
+            size_t bounds_length;
         } stakingAmendCommissionSchedule;
     } body;
 

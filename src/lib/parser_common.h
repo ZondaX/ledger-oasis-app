@@ -32,17 +32,11 @@ typedef enum {
     parser_unexpected_number_items,
     parser_unexpected_data_at_end,
     parser_init_context_empty,
-
     parser_unexpected_characters,
     parser_unexpected_field,
-    parser_duplicated_field,
     parser_value_out_of_range,
-    parser_unexpected_chain,
     /////
     parser_cbor_unexpected,
-    /////
-    parser_display_idx_out_of_range,
-    parser_display_page_out_of_range,
 } parser_error_t;
 
 typedef struct {
