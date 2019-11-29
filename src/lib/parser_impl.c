@@ -206,7 +206,7 @@ __Z_INLINE parser_error_t _readAmendment(parser_tx_t *v, CborValue *value) {
     // Array of rates
     cbor_value_get_array_length(&contents, &v->oasis_tx.body.stakingAmendCommissionSchedule.rates_length);
 
-    CborValue arrayContainer;
+    /*CborValue arrayContainer;
     CHECK_CBOR_ERR(cbor_value_enter_container(&contents, &arrayContainer));
 
     for (int i = 0; i < v->oasis_tx.body.stakingAmendCommissionSchedule.rates_length; i++) {
@@ -216,7 +216,9 @@ __Z_INLINE parser_error_t _readAmendment(parser_tx_t *v, CborValue *value) {
         CHECK_CBOR_ERR(cbor_value_advance(&arrayContainer));
     }
 
-    CHECK_CBOR_ERR(cbor_value_leave_container(&contents, &arrayContainer));
+    CHECK_CBOR_ERR(cbor_value_leave_container(&contents, &arrayContainer));*/
+
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
 
     CHECK_CBOR_MATCH_KEY(&contents, "bounds");
     CHECK_CBOR_ERR(cbor_value_advance(&contents));
@@ -225,14 +227,14 @@ __Z_INLINE parser_error_t _readAmendment(parser_tx_t *v, CborValue *value) {
     // Array of bounds
     cbor_value_get_array_length(&contents, &v->oasis_tx.body.stakingAmendCommissionSchedule.bounds_length);
 
-    CHECK_CBOR_ERR(cbor_value_enter_container(&contents, &arrayContainer));
+    //CHECK_CBOR_ERR(cbor_value_enter_container(&contents, &arrayContainer));
 
-    for (int i = 0; i < v->oasis_tx.body.stakingAmendCommissionSchedule.bounds_length; i++) {
+    /*for (int i = 0; i < v->oasis_tx.body.stakingAmendCommissionSchedule.bounds_length; i++) {
       CHECK_CBOR_ERR(_readBound(&arrayContainer, &v->oasis_tx.body.stakingAmendCommissionSchedule.bounds[i]));
 
       if (!cbor_value_at_end(&arrayContainer))
           CHECK_CBOR_ERR(cbor_value_advance(&arrayContainer));
-    }
+    }*/
 
     return parser_ok;
 }
@@ -346,6 +348,7 @@ __Z_INLINE parser_error_t _readBody(parser_tx_t *v, CborValue *value) {
 
             CHECK_CBOR_MATCH_KEY(&contents, "amendment");
             CHECK_CBOR_ERR(cbor_value_advance(&contents));
+            // ONLY READ LENGTH ! THEN GET ON ITEM ON DEMAND
             CHECK_PARSER_ERR(_readAmendment(v, &contents))
             CHECK_CBOR_ERR(cbor_value_advance(&contents));
 
@@ -470,4 +473,56 @@ uint8_t _getNumItems(parser_context_t *c, parser_tx_t *v) {
     }
 
     return itemCount;
+}
+
+parser_error_t _getCommissionRateStepAtIndex(parser_context_t *c, parser_tx_t *v, uint8_t index) {
+    CborValue it;
+    CHECK_CBOR_ERR(cbor_parser_init(c->buffer,
+                                    c->bufferLen,
+                                    c->offset,
+                                    &v->parser,
+                                    &it));
+
+    if (cbor_value_at_end(&it)) {
+        return parser_unexpected_buffer_end;
+    }
+
+    // We should have already initiated v but should we verify ?
+
+    if (!cbor_value_is_map(&it)) {
+        return parser_unexpected_type;
+    }
+
+    CborValue bodyContainer;
+    CHECK_CBOR_ERR(cbor_value_map_find_value(&it, "body", &bodyContainer));
+
+    if (!cbor_value_is_map(&bodyContainer)) {
+        return parser_unexpected_type;
+    }
+
+    CborValue amendmentContainer;
+    CHECK_CBOR_ERR(cbor_value_map_find_value(&bodyContainer, "amendment", &amendmentContainer));
+
+    if (!cbor_value_is_map(&amendmentContainer)) {
+        return parser_unexpected_type;
+    }
+
+    CborValue ratesContainer;
+    CHECK_CBOR_ERR(cbor_value_map_find_value(&amendmentContainer, "rates", &ratesContainer));
+
+    if (!cbor_value_is_array(&ratesContainer)) {
+        return parser_unexpected_type;
+    }
+
+    CborValue rateContainer;
+    CHECK_CBOR_ERR(cbor_value_enter_container(&ratesContainer, &rateContainer));
+
+    for (int i = 0; i < index; i++) {
+      CHECK_CBOR_ERR(cbor_value_advance(&rateContainer));
+    }
+
+    CHECK_CBOR_ERR(_readRate(&rateContainer, &v->oasis_tx.body.stakingAmendCommissionSchedule.rate));
+
+    return parser_ok;
+
 }

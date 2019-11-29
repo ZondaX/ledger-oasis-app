@@ -261,15 +261,23 @@ parser_error_t parser_getItem(parser_context_t *ctx,
             if ((displayIdx - 3) / 2 < parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.rates_length) {
               int8_t index = (displayIdx - 3) / 2;
 
+              // Need to do it once for each rate which is every 2 displayIdx
+              if ((displayIdx - 3) % 2 == 0) {
+                // Only keeping one amendment in body at the time
+                parser_error_t err = _getCommissionRateStepAtIndex(ctx, &parser_tx_obj, index);
+                if (err != parser_ok)
+                    return err;
+              }
+
               switch ((displayIdx - 3) % 2) {
                 case 0: {
                   snprintf(outKey, outKeyLen, "Rates : [%i] start", index);
-                  uint64_to_str(outVal, outValLen, parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.rates[index].start);
+                  uint64_to_str(outVal, outValLen, parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.rate.start);
                   return parser_ok;
                 }
                 case 1: {
                   snprintf(outKey, outKeyLen, "Rates : [%i] rate", index);
-                  return parser_printRate(&parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.rates[index].rate,
+                  return parser_printRate(&parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.rate.rate,
                                               outVal, outValLen, pageIdx, pageCount);
                 }
               }
@@ -279,17 +287,17 @@ parser_error_t parser_getItem(parser_context_t *ctx,
               switch ((displayIdx - 3 - parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.rates_length*2) % 3) {
                 case 0: {
                   snprintf(outKey, outKeyLen, "Bounds : [%i] start", index);
-                  uint64_to_str(outVal, outValLen, parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.bounds[index].start);
+                  uint64_to_str(outVal, outValLen, parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.bound.start);
                   return parser_ok;
                 }
                 case 1: {
                   snprintf(outKey, outKeyLen, "Bounds : [%i] min", index);
-                  return parser_printRate(&parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.bounds[index].rate_min,
+                  return parser_printRate(&parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.bound.rate_min,
                                               outVal, outValLen, pageIdx, pageCount);
                 }
                 case 2: {
                   snprintf(outKey, outKeyLen, "Bounds : [%i] max", index);
-                  return parser_printRate(&parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.bounds[index].rate_max,
+                  return parser_printRate(&parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.bound.rate_max,
                                               outVal, outValLen, pageIdx, pageCount);
                 }
               }
