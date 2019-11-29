@@ -36,6 +36,9 @@ uint8_t _getNumItems(parser_context_t *c, parser_tx_t *v);
 
 parser_error_t _getCommissionRateStepAtIndex(parser_context_t *c, parser_tx_t *v, uint8_t index);
 
+parser_error_t _getCommissionBoundStepAtIndex(parser_context_t *c, parser_tx_t *v, uint8_t index);
+
+
 #ifdef __cplusplus
 }
 #endif

@@ -284,6 +284,14 @@ parser_error_t parser_getItem(parser_context_t *ctx,
             } else {
               int8_t index = (displayIdx - 3 - parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.rates_length*2) / 3;
 
+              // Need to do it once for each bound which is every 3 displayIdx
+              if ((displayIdx - 3 - parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.rates_length*2) % 3 == 0) {
+                // Only keeping one amendment in body at the time
+                parser_error_t err = _getCommissionBoundStepAtIndex(ctx, &parser_tx_obj, index);
+                if (err != parser_ok)
+                    return err;
+              }
+
               switch ((displayIdx - 3 - parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.rates_length*2) % 3) {
                 case 0: {
                   snprintf(outKey, outKeyLen, "Bounds : [%i] start", index);
