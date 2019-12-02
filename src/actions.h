@@ -17,10 +17,11 @@
 #pragma once
 
 #include <stdint.h>
+#include "coin.h"
 
 uint8_t app_sign();
 
-void app_set_hrp(char *p);
+void app_set_context(const uint8_t *context, uint8_t context_len);
 
 uint8_t app_fill_address();
 

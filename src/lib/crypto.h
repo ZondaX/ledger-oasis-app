@@ -31,7 +31,12 @@ extern uint32_t bip44Path[BIP44_LEN_DEFAULT];
 
 uint16_t crypto_fillAddress(uint8_t *buffer, uint16_t buffer_len);
 
-uint16_t crypto_sign(uint8_t *signature, uint16_t signatureMaxlen, const uint8_t *message, uint16_t messageLen);
+uint16_t crypto_sign(uint8_t *signature,
+                     uint16_t signatureMaxlen,
+                     const uint8_t *context,
+                     uint8_t contextLen,
+                     const uint8_t *message,
+                     uint16_t messageLen);
 
 #ifdef __cplusplus
 }

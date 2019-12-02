@@ -76,6 +76,8 @@ void crypto_extractPublicKey(uint32_t bip44Path[BIP44_LEN_DEFAULT], uint8_t *pub
 
 uint16_t crypto_sign(uint8_t *signature,
                      uint16_t signatureMaxlen,
+                     const uint8_t *context,
+                     uint8_t contextLen,
                      const uint8_t *message,
                      uint16_t messageLen) {
     uint8_t messageDigest[CX_SHA512_SIZE];
@@ -84,7 +86,9 @@ uint16_t crypto_sign(uint8_t *signature,
     // Hash it
     cx_sha512_t ctx;
     cx_sha512_init((cx_sha512_t *)&ctx.header);
-    cx_hash(&ctx.header, 0, (const uint8_t *) PIC(COIN_HASH_CONTEXT), strlen(PIC(COIN_HASH_CONTEXT)), NULL, 0);
+    if (contextLen > 0) {
+        cx_hash(&ctx.header, 0, context, contextLen, NULL, 0);
+    }
     cx_hash(&ctx.header, CX_LAST, message, messageLen, messageDigest, CX_SHA512_SIZE);
 
     cx_ecfp_private_key_t cx_privateKey;
@@ -136,6 +140,8 @@ void crypto_extractPublicKey(uint32_t path[BIP32_LEN_DEFAULT], uint8_t *pubKey) 
 
 uint16_t crypto_sign(uint8_t *signature,
                      uint16_t signatureMaxlen,
+                     const uint8_t *context,
+                     uint8_t contextLen,
                      const uint8_t *message,
                      uint16_t messageLen) {
     // Empty version for non-Ledger devices
