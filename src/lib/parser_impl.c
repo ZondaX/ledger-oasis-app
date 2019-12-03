@@ -206,18 +206,6 @@ __Z_INLINE parser_error_t _readAmendment(parser_tx_t *v, CborValue *value) {
     // Array of rates
     cbor_value_get_array_length(&contents, &v->oasis_tx.body.stakingAmendCommissionSchedule.rates_length);
 
-    /*CborValue arrayContainer;
-    CHECK_CBOR_ERR(cbor_value_enter_container(&contents, &arrayContainer));
-
-    for (int i = 0; i < v->oasis_tx.body.stakingAmendCommissionSchedule.rates_length; i++) {
-      CHECK_CBOR_ERR(_readRate(&arrayContainer, &v->oasis_tx.body.stakingAmendCommissionSchedule.rates[i]));
-
-      if (!cbor_value_at_end(&arrayContainer))
-        CHECK_CBOR_ERR(cbor_value_advance(&arrayContainer));
-    }
-
-    CHECK_CBOR_ERR(cbor_value_leave_container(&contents, &arrayContainer));*/
-
     CHECK_CBOR_ERR(cbor_value_advance(&contents));
 
     CHECK_CBOR_MATCH_KEY(&contents, "bounds");
@@ -226,15 +214,6 @@ __Z_INLINE parser_error_t _readAmendment(parser_tx_t *v, CborValue *value) {
 
     // Array of bounds
     cbor_value_get_array_length(&contents, &v->oasis_tx.body.stakingAmendCommissionSchedule.bounds_length);
-
-    //CHECK_CBOR_ERR(cbor_value_enter_container(&contents, &arrayContainer));
-
-    /*for (int i = 0; i < v->oasis_tx.body.stakingAmendCommissionSchedule.bounds_length; i++) {
-      CHECK_CBOR_ERR(_readBound(&arrayContainer, &v->oasis_tx.body.stakingAmendCommissionSchedule.bounds[i]));
-
-      if (!cbor_value_at_end(&arrayContainer))
-          CHECK_CBOR_ERR(cbor_value_advance(&arrayContainer));
-    }*/
 
     return parser_ok;
 }
@@ -569,8 +548,6 @@ parser_error_t _getCommissionBoundStepAtIndex(parser_context_t *c, parser_tx_t *
     if (cbor_value_at_end(&it)) {
         return parser_unexpected_buffer_end;
     }
-
-    // We should have already initiated v but should we verify ?
 
     CborValue boundsContainer;
     CHECK_CBOR_ERR(_getBoundsContainer(&it, &boundsContainer));

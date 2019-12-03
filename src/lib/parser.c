@@ -258,7 +258,7 @@ parser_error_t parser_getItem(parser_context_t *ctx,
             }
             break;
         case stakingAmendCommissionSchedule:
-            if ((displayIdx - 3) / 2 < parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.rates_length) {
+            if ((displayIdx - 3) / 2 < (int)parser_tx_obj.oasis_tx.body.stakingAmendCommissionSchedule.rates_length) {
               int8_t index = (displayIdx - 3) / 2;
 
               // Need to do it once for each rate which is every 2 displayIdx
