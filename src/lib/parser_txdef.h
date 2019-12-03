@@ -80,9 +80,9 @@ typedef struct {
         } stakingReclaimEscrow;
 
         struct {
-            commissionRateStep_t rates[MAX_RATES];
+            commissionRateStep_t rate;
             size_t rates_length;
-            commissionRateBoundStep_t bounds[MAX_RATES];
+            commissionRateBoundStep_t bound;
             size_t bounds_length;
         } stakingAmendCommissionSchedule;
     } body;
