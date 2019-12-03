@@ -74,8 +74,13 @@ const char *parser_getErrorDescription(parser_error_t err) {
             return "Value out of range";
         case parser_cbor_unexpected:
             return "unexpected CBOR error";
-        case parser_unexpected_context:
-            return "unexpected context prefix";
+        ///////////
+        case parser_context_mismatch:
+            return "context prefix is invalid";
+        case parser_context_unexpected_size:
+            return "context unexpected size";
+        case parser_context_invalid_chars:
+            return "context invalid chars";
 
         default:
             return "Unrecognized error code";

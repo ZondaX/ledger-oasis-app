@@ -30,7 +30,9 @@ const uint8_t *crypto_get_context();
 
 uint8_t crypto_get_context_length();
 
-bool_t crypto_validate_context(oasis_methods_e method);
+parser_error_t  crypto_validate_context(oasis_methods_e method);
+
+const uint8_t *crypto_get_context_suffix(oasis_methods_e method);
 
 #ifdef __cplusplus
 }

@@ -30,20 +30,22 @@ parser_error_t crypto_set_context(const uint8_t *new_context, uint8_t new_contex
     crypto_context_length = 0;
 
     if (new_context_length > MAX_CONTEXT_SIZE) {
-        return parser_unexpected_context;
-    }
-
-    crypto_context_length = new_context_length;
-    if (crypto_context_length > 0) {
-        MEMCPY(crypto_context, new_context, crypto_context_length);
+        return parser_context_unexpected_size;
     }
 
     // Check all bytes in context as ASCII within 32..127
-    for (uint8_t i = 0; i < crypto_context_length; i++) {
-        if (crypto_context[i] < 32 || crypto_context[i] > 127) {
-            return parser_unexpected_context;
+    for (uint8_t i = 0; i < new_context_length; i++) {
+        if (new_context[i] < 32 || new_context[i] > 127) {
+            return parser_context_invalid_chars;
         }
     }
+
+    if (new_context_length > 0) {
+        MEMCPY(crypto_context, new_context, new_context_length);
+        crypto_context_length = new_context_length;
+    }
+
+    return parser_ok;
 }
 
 const uint8_t *crypto_get_context() {
@@ -54,23 +56,41 @@ uint8_t crypto_get_context_length() {
     return crypto_context_length;
 }
 
-bool_t crypto_validate_context(oasis_methods_e method) {
+const char *crypto_get_expected_prefix(oasis_methods_e method) {
     switch (method) {
         case stakingTransfer:
         case stakingBurn:
         case stakingAddEscrow:
         case stakingReclaimEscrow:
         case stakingAmendCommissionSchedule:
-            // confirm that the context starts with the correct prefix
-            if (strncmp(context_prefix_tx,
-                        (char *) crypto_context,
-                        strlen(context_prefix_tx)) == 0) {
-                return bool_true;
-            }
+            return context_prefix_tx;
         case unknownMethod:
         default:
             // This should fail
             break;
     }
-    return bool_false;
+    return NULL;
+}
+
+parser_error_t  crypto_validate_context(oasis_methods_e method) {
+    const char *expectedPrefix = crypto_get_expected_prefix(method);
+    if (expectedPrefix == NULL)
+        return parser_context_unknown_prefix;
+
+    // confirm that the context starts with the correct prefix
+    if (strncmp(expectedPrefix, (char *) crypto_context, strlen(expectedPrefix)) != 0) {
+        return parser_context_mismatch;
+    }
+
+    return parser_ok;
+}
+
+const uint8_t *crypto_get_context_suffix(oasis_methods_e method) {
+    if (crypto_validate_context(method) != parser_ok) {
+        // Return everything when not valid
+        return crypto_context;
+    }
+
+    const char *expectedPrefix = crypto_get_expected_prefix(method);
+    return crypto_context + strlen(expectedPrefix);
 }

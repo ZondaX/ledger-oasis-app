@@ -58,15 +58,14 @@ parser_error_t parser_validate(parser_context_t *ctx) {
     }
 
     // Validate context matches tx type
-    if (!crypto_validate_context(parser_tx_obj.oasis_tx.method)) {
-        return parser_unexpected_context;
-    }
+    err = crypto_validate_context(parser_tx_obj.oasis_tx.method);
 
-    return parser_ok;
+    return err;
 }
 
 bool parser_customContextEnabled() {
-    return 0;
+    // FIXME: Do not show when suffix is empty
+    return crypto_get_context_length() > 0;
 }
 
 uint8_t parser_getNumItems(parser_context_t *ctx) {
@@ -342,8 +341,10 @@ parser_error_t parser_getItem(parser_context_t *ctx,
         numberFixedItems++;
 
         if (displayIdx == 3) {
-            snprintf(outKey, outKeyLen, "Fee Gas");
-            uint64_to_str(outVal, outValLen, parser_tx_obj.oasis_tx.fee_gas);
+            snprintf(outKey, outKeyLen, "Context");
+            pageString(outVal, outValLen,
+                       (char *) crypto_get_context_suffix(parser_tx_obj.oasis_tx.method),
+                       pageIdx, pageCount);
             return parser_ok;
         }
     }

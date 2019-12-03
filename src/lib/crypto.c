@@ -86,7 +86,7 @@ uint16_t crypto_sign(uint8_t *signature,
     cx_sha512_init((cx_sha512_t *)&ctx.header);
 
     if (crypto_get_context_length() > 0) {
-        cx_hash(&ctx.header, 0, crypto_get_context(), crypto_get_context_length, NULL, 0);
+        cx_hash(&ctx.header, 0, crypto_get_context(), crypto_get_context_length(), NULL, 0);
     }
 
     cx_hash(&ctx.header, CX_LAST, message, messageLen, messageDigest, CX_SHA512_SIZE);
