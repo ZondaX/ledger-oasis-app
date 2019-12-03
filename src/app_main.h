@@ -31,6 +31,7 @@
 #define APDU_MIN_LENGTH                 5
 
 #define OFFSET_PAYLOAD_TYPE             OFFSET_P1
+#define OFFSET_CONTEXT                  (OFFSET_DATA + sizeof(uint32_t) * BIP44_LEN_DEFAULT)
 
 #define INS_GET_VERSION                 0
 #define INS_GET_ADDR_ED25519            1

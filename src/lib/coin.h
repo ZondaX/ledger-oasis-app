@@ -29,11 +29,11 @@ extern "C" {
 #define BIP44_4_DEFAULT     (0)
 
 #define COIN_HRP            "oasis"
-#define COIN_HASH_CONTEXT   "oasis-core/consensus: tx for chain test-chain-id"
 #define COIN_AMOUNT_DECIMAL_PLACES 9
 #define COIN_RATE_DECIMAL_PLACES 5
 
 #define MAX_RATES           10
+#define MAX_CONTEXT_SIZE    64
 
 #ifdef __cplusplus
 }

@@ -119,6 +119,8 @@ All other packets/chunks should contain message to sign
 | Path[2]    | byte (4) | Derivation Path Data   | ?         |
 | Path[3]    | byte (4) | Derivation Path Data   | ?         |
 | Path[4]    | byte (4) | Derivation Path Data   | ?         |
+| CtxLen     | byte     | Context Length         | 0.63      |
+| Ctx        | ? bytes  | Context String         | ?         |
 
 *Other Chunks/Packets*
 

@@ -13,28 +13,26 @@
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
 ********************************************************************************/
-
 #pragma once
 
-#include <zxmacros.h>
-#include "coin.h"
+#include <stdint.h>
+#include <zxtypes.h>
+#include "parser_txdef.h"
+#include "parser_common.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define BIP44_LEN_DEFAULT       5u
-#define MAX_BECH32_HRP_LEN      83u
-#define PK_LEN       32u
+parser_error_t crypto_set_context(const uint8_t *context, uint8_t context_len);
 
-extern uint32_t bip44Path[BIP44_LEN_DEFAULT];
+const uint8_t *crypto_get_context();
 
-uint16_t crypto_fillAddress(uint8_t *buffer, uint16_t buffer_len);
+uint8_t crypto_get_context_length();
 
-uint16_t crypto_sign(uint8_t *signature,
-                     uint16_t signatureMaxlen,
-                     const uint8_t *message,
-                     uint16_t messageLen);
+parser_error_t  crypto_validate_context(oasis_methods_e method);
+
+const uint8_t *crypto_get_context_suffix(oasis_methods_e method);
 
 #ifdef __cplusplus
 }

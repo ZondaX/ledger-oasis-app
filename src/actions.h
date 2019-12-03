@@ -1,5 +1,4 @@
 /*******************************************************************************
-*   (c) 2016 Ledger
 *   (c) 2019 ZondaX GmbH
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,8 +18,6 @@
 #include <stdint.h>
 
 uint8_t app_sign();
-
-void app_set_hrp(char *p);
 
 uint8_t app_fill_address();
 

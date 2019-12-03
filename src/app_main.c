@@ -27,6 +27,7 @@
 #include "lib/crypto.h"
 #include "coin.h"
 #include "zxmacros.h"
+#include "context.h"
 
 unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
 
@@ -47,9 +48,9 @@ unsigned char io_event(unsigned char channel) {
 
         case SEPROXYHAL_TAG_TICKER_EVENT: { //
             UX_TICKER_EVENT(G_io_seproxyhal_spi_buffer, {
-                if (UX_ALLOWED) {
-                    UX_REDISPLAY();
-                }
+                    if (UX_ALLOWED) {
+                        UX_REDISPLAY();
+                    }
             });
             break;
         }
@@ -105,16 +106,33 @@ void extractBip44(uint32_t rx, uint32_t offset) {
 
     // Check all items are hardened
     for (uint8_t i = 0; i < BIP44_LEN_DEFAULT; i++) {
-        if ( (bip44Path[0] & 0x80000000u) == 0) {
+        if ((bip44Path[0] & 0x80000000u) == 0) {
             THROW(APDU_CODE_DATA_INVALID);
         }
+    }
+}
+
+void extractContext(uint32_t rx, uint32_t offset) {
+    if ((rx - offset) < sizeof(uint8_t)) {
+        THROW(APDU_CODE_WRONG_LENGTH);
+    }
+
+    const uint8_t context_length = G_io_apdu_buffer[offset];
+    if ((rx - offset) < 1 + context_length) {
+        THROW(APDU_CODE_WRONG_LENGTH);
+    }
+
+    const uint8_t *context = G_io_apdu_buffer + offset + 1;
+    parser_error_t err = crypto_set_context(context, context_length);
+    if (err != parser_ok) {
+        THROW(APDU_CODE_DATA_INVALID);
     }
 }
 
 bool process_chunk(volatile uint32_t *tx, uint32_t rx) {
     const uint8_t payloadType = G_io_apdu_buffer[OFFSET_PAYLOAD_TYPE];
 
-    if (G_io_apdu_buffer[OFFSET_P2] != 0){
+    if (G_io_apdu_buffer[OFFSET_P2] != 0) {
         THROW(APDU_CODE_INVALIDP1P2);
     }
 
@@ -123,11 +141,12 @@ bool process_chunk(volatile uint32_t *tx, uint32_t rx) {
     }
 
     uint32_t added;
-    switch(payloadType) {
+    switch (payloadType) {
         case 0:
             tx_initialize();
             tx_reset();
             extractBip44(rx, OFFSET_DATA);
+            extractContext(rx, OFFSET_CONTEXT);
             return false;
         case 1:
             added = tx_append(&(G_io_apdu_buffer[OFFSET_DATA]), rx - OFFSET_DATA);
