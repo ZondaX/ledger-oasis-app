@@ -35,6 +35,7 @@ typedef enum {
     parser_unexpected_characters,
     parser_unexpected_field,
     parser_value_out_of_range,
+    parser_unexpected_context,
     /////
     parser_cbor_unexpected,
     /////

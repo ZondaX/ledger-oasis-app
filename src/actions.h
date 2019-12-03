@@ -1,5 +1,4 @@
 /*******************************************************************************
-*   (c) 2016 Ledger
 *   (c) 2019 ZondaX GmbH
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,11 +16,8 @@
 #pragma once
 
 #include <stdint.h>
-#include "coin.h"
 
 uint8_t app_sign();
-
-void app_set_context(const uint8_t *context, uint8_t context_len);
 
 uint8_t app_fill_address();
 

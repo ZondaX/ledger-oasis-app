@@ -117,9 +117,15 @@ void extractContext(uint32_t rx, uint32_t offset) {
     }
 
     const uint8_t context_length = G_io_apdu_buffer[offset];
-    const char *context = G_io_apdu_buffer + offset + 1;
+    if ((rx - offset) < 1 + context_length) {
+        THROW(APDU_CODE_WRONG_LENGTH);
+    }
 
-    app_set_context(context, context_length)
+    const uint8_t *context = G_io_apdu_buffer + offset + 1;
+    parser_error_t err = crypto_set_context(context, context_length);
+    if (err != parser_ok) {
+        THROW(APDU_CODE_DATA_INVALID);
+    }
 }
 
 bool process_chunk(volatile uint32_t *tx, uint32_t rx) {

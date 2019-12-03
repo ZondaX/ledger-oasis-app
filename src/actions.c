@@ -20,9 +20,7 @@
 #include "tx.h"
 #include "apdu_codes.h"
 #include <os_io_seproxyhal.h>
-
-char context[MAX_CONTEXT_SIZE + 1];
-uint8_t context_length;
+#include "coin.h"
 
 uint8_t app_sign() {
     uint8_t *signature = G_io_apdu_buffer;
@@ -30,22 +28,7 @@ uint8_t app_sign() {
     const uint16_t messageLength = tx_get_buffer_length();
 
     return crypto_sign(signature, IO_APDU_BUFFER_SIZE - 2,
-                       context, context_length,
                        message, messageLength);
-}
-
-void app_set_context(const uint8_t *new_context, uint8_t new_context_length){
-    MEMZERO(context, sizeof(context));
-    context_length = 0;
-
-    if (context_len > MAX_CONTEXT_SIZE) {
-        THROW(APDU_CODE_WRONG_LENGTH);
-    }
-
-    context_length = new_context_length;
-    if (context_length > 0) {
-        MEMCPY(context, new_context, context_length);
-    }
 }
 
 uint8_t app_fill_address() {

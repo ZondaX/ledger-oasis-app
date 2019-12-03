@@ -74,6 +74,8 @@ const char *parser_getErrorDescription(parser_error_t err) {
             return "Value out of range";
         case parser_cbor_unexpected:
             return "unexpected CBOR error";
+        case parser_unexpected_context:
+            return "unexpected context prefix";
 
         default:
             return "Unrecognized error code";

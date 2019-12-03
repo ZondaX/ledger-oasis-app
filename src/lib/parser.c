@@ -22,6 +22,7 @@
 #include "view_internal.h"
 #include "parser.h"
 #include "parser_txdef.h"
+#include "context.h"
 #include "coin.h"
 
 #if defined(TARGET_NANOX)
@@ -56,11 +57,25 @@ parser_error_t parser_validate(parser_context_t *ctx) {
         }
     }
 
+    // Validate context matches tx type
+    if (!crypto_validate_context(parser_tx_obj.oasis_tx.method)) {
+        return parser_unexpected_context;
+    }
+
     return parser_ok;
 }
 
+bool parser_customContextEnabled() {
+    return 0;
+}
+
 uint8_t parser_getNumItems(parser_context_t *ctx) {
-    return _getNumItems(ctx, &parser_tx_obj);
+    uint8_t txItems = _getNumItems(ctx, &parser_tx_obj);
+
+    if (parser_customContextEnabled())
+        txItems++;
+
+    return txItems;
 }
 
 __Z_INLINE parser_error_t parser_getType(parser_context_t *ctx, char *outVal, uint16_t outValLen) {
@@ -290,7 +305,6 @@ __Z_INLINE parser_error_t parser_getDynamicItem(parser_context_t *ctx,
     }
 }
 
-
 parser_error_t parser_getItem(parser_context_t *ctx,
                               int8_t displayIdx,
                               char *outKey, uint16_t outKeyLen,
@@ -321,6 +335,20 @@ parser_error_t parser_getItem(parser_context_t *ctx,
         return parser_ok;
     }
 
-    const int8_t displayDynIdx = displayIdx - 3;
+    uint8_t numberFixedItems = 3;
+
+    // Display context?
+    if (parser_customContextEnabled()) {
+        numberFixedItems++;
+
+        if (displayIdx == 3) {
+            snprintf(outKey, outKeyLen, "Fee Gas");
+            uint64_to_str(outVal, outValLen, parser_tx_obj.oasis_tx.fee_gas);
+            return parser_ok;
+        }
+    }
+
+    // Now display dynamic items
+    const int8_t displayDynIdx = displayIdx - numberFixedItems;
     return parser_getDynamicItem(ctx, displayDynIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
 }
