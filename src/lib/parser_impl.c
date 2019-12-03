@@ -87,7 +87,6 @@ const char *parser_getErrorDescription(parser_error_t err) {
     }
 }
 
-// TODO: improve this and remap error + messages
 #define CHECK_CBOR_ERR(err) if (err!=CborNoError) return parser_cbor_unexpected;
 #define CHECK_PARSER_ERR(err) if (err!=parser_ok) return err;
 #define CHECK_CBOR_TYPE(type, expected) if (type!=expected) return parser_unexpected_type;

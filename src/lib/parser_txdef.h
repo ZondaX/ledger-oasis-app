@@ -46,7 +46,7 @@ typedef uint64_t epochTime_t;
 
 typedef struct {
     epochTime_t start;
-    quantity_t rate;                            // FIXME: Number of decimals
+    quantity_t rate;
 } commissionRateStep_t;
 
 typedef struct {
