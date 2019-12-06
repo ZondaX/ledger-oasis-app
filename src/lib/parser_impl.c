@@ -229,8 +229,8 @@ __Z_INLINE parser_error_t _readFee(parser_tx_t *v, CborValue *value) {
 //        "gas": 0,
 //        "amount": ""
 //    },
-    CHECK_CBOR_MATCH_KEY(value, "fee");
-    CHECK_CBOR_ERR(cbor_value_advance(value));
+    //CHECK_CBOR_MATCH_KEY(value, "fee");
+    //CHECK_CBOR_ERR(cbor_value_advance(value));
 
     /// Enter container
     CborValue contents;
@@ -264,9 +264,6 @@ __Z_INLINE parser_error_t _skipBody(parser_tx_t *v, CborValue *value) {
 
 __Z_INLINE parser_error_t _readBody(parser_tx_t *v, CborValue *value) {
     // Reference: https://github.com/oasislabs/oasis-core/blob/kostko/feature/docs-staking/docs/consensus/staking.md#test-vectors
-
-    CHECK_CBOR_MATCH_KEY(value, "body");
-    CHECK_CBOR_ERR(cbor_value_advance(value));
 
     CborValue contents;
     CHECK_CBOR_TYPE(cbor_value_get_type(value), CborMapType);
@@ -339,30 +336,23 @@ __Z_INLINE parser_error_t _readBody(parser_tx_t *v, CborValue *value) {
 
             break;
         }
+
         case unknownMethod:
         default:
             return parser_unexpected_method;
     }
 
-    // Close container
-    CHECK_CBOR_ERR(cbor_value_leave_container(value, &contents));
-
     return parser_ok;
 }
 
 __Z_INLINE parser_error_t _readNonce(parser_tx_t *v, CborValue *value) {
-    CHECK_CBOR_MATCH_KEY(value, "nonce");
-    CHECK_CBOR_ERR(cbor_value_advance(value));
-
     CHECK_CBOR_TYPE(cbor_value_get_type(value), CborIntegerType);
     CHECK_CBOR_ERR(cbor_value_get_uint64(value, &v->oasis_tx.nonce));
-    CHECK_CBOR_ERR(cbor_value_advance(value));
+
     return parser_ok;
 }
 
 __Z_INLINE parser_error_t _readMethod(parser_tx_t *v, CborValue *value) {
-    CHECK_CBOR_MATCH_KEY(value, "method");
-    CHECK_CBOR_ERR(cbor_value_advance(value));
 
     v->oasis_tx.method = unknownMethod;
     if (_matchKey(value, "staking.Transfer"))
@@ -375,10 +365,11 @@ __Z_INLINE parser_error_t _readMethod(parser_tx_t *v, CborValue *value) {
         v->oasis_tx.method = stakingReclaimEscrow;
     if (_matchKey(value, "staking.AmendCommissionSchedule"))
         v->oasis_tx.method = stakingAmendCommissionSchedule;
+    if (_matchKey(value, "registry.DeregisterEntity"))
+        v->oasis_tx.method = registryDeregisterEntity;
     if (v->oasis_tx.method == unknownMethod)
         return parser_unexpected_method;
 
-    CHECK_CBOR_ERR(cbor_value_advance(value));
     return parser_ok;
 }
 
@@ -397,25 +388,45 @@ parser_error_t _readTx(parser_context_t *c, parser_tx_t *v) {
     MEMZERO(&v->oasis_tx, sizeof(oasis_tx_t));
 
     CHECK_CBOR_TYPE(cbor_value_get_type(&it), CborMapType);
+    // FIXME: expected count can be 2 or 3 or 4 see #17
     CHECK_CBOR_MAP_LEN(&it, 4);
+
+    /*if (CborErrorGarbageAtEnd == cbor_value_validate(&it, (int)0x80000000)) {
+        return parser_unexpected_data_at_end;
+    }*/
 
     /// Enter container
     CborValue contents;
     CHECK_CBOR_ERR(cbor_value_enter_container(&it, &contents));
 
+    // Find method and read it first
+    CborValue methodField;
+    CHECK_CBOR_ERR(cbor_value_map_find_value(&it, "method", &methodField));
+    CHECK_PARSER_ERR(_readMethod(v, &methodField));
+
     /// Retrieve expected fields (this is canonical cbor, so order it deterministic)
-    CHECK_PARSER_ERR(_readFee(v, &contents));
+    // FIXME: fee is optional see #17
+    CborValue feeField;
+    CHECK_CBOR_ERR(cbor_value_map_find_value(&it, "fee", &feeField));
+    CHECK_PARSER_ERR(_readFee(v, &feeField));
 
-    CborValue bodyField = contents; // Keep a copy and skip
-    CHECK_PARSER_ERR(_skipBody(v, &contents));
-    CHECK_PARSER_ERR(_readNonce(v, &contents));
-    CHECK_PARSER_ERR(_readMethod(v, &contents));
+    CborValue nonceField;
+    CHECK_CBOR_ERR(cbor_value_map_find_value(&it, "nonce", &nonceField));
+    CHECK_PARSER_ERR(_readNonce(v, &nonceField));
 
+    CborValue bodyField;
+    CHECK_CBOR_ERR(cbor_value_map_find_value(&it, "body", &bodyField));
     CHECK_PARSER_ERR(_readBody(v, &bodyField));
 
-    // Close container
-    CHECK_CBOR_ERR(cbor_value_leave_container(&it, &contents));
+    /* This wont work anymore
+    if (it.ptr != c->buffer + c->bufferLen) {
+        // End of buffer does not match end of parsed data
+        return parser_unexpected_data_at_end;
+    }*/
 
+    CHECK_CBOR_ERR(cbor_value_advance(&it));
+
+    // Could we do it.parser->end != it.ptr ?
     if (it.ptr != c->buffer + c->bufferLen) {
         // End of buffer does not match end of parsed data
         return parser_unexpected_data_at_end;
@@ -452,6 +463,8 @@ uint8_t _getNumItems(parser_context_t *c, parser_tx_t *v) {
             // Each bound contains 3 items (start, rate_max & rate_min)
             itemCount += v->oasis_tx.body.stakingAmendCommissionSchedule.bounds_length * 3;
             break;
+        case registryDeregisterEntity:
+            itemCount = 0;
         case unknownMethod:
         default:
             break;

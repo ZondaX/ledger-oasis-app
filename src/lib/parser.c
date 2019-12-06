@@ -94,6 +94,9 @@ __Z_INLINE parser_error_t parser_getType(parser_context_t *ctx, char *outVal, ui
         case stakingAmendCommissionSchedule:
             snprintf(outVal, outValLen, "Amend commission schedule");
             return parser_ok;
+        case registryDeregisterEntity:
+            snprintf(outVal, outValLen, "Deregister Entity");
+            return parser_ok;
         case unknownMethod:
         default:
             break;

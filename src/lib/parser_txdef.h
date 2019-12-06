@@ -33,7 +33,8 @@ typedef enum {
     stakingBurn,
     stakingAddEscrow,
     stakingReclaimEscrow,
-    stakingAmendCommissionSchedule
+    stakingAmendCommissionSchedule,
+    registryDeregisterEntity
 } oasis_methods_e;
 
 typedef uint8_t publickey_t[32];
@@ -86,6 +87,7 @@ typedef struct {
             commissionRateBoundStep_t bound;
             size_t bounds_length;
         } stakingAmendCommissionSchedule;
+        
     } body;
 
     uint64_t nonce;
