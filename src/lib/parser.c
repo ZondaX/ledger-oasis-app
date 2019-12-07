@@ -97,6 +97,9 @@ __Z_INLINE parser_error_t parser_getType(parser_context_t *ctx, char *outVal, ui
         case registryDeregisterEntity:
             snprintf(outVal, outValLen, "Deregister Entity");
             return parser_ok;
+        case registryUnfreezeNode:
+            snprintf(outVal, outValLen, "Unfreeze Node");
+            return parser_ok;
         case unknownMethod:
         default:
             break;
@@ -303,6 +306,10 @@ __Z_INLINE parser_error_t parser_getDynamicItem(parser_context_t *ctx,
             break;
         case registryDeregisterEntity:
             return parser_ok;
+        case registryUnfreezeNode:
+            snprintf(outKey, outKeyLen, "Node ID");
+            return parser_printPublicKey(&parser_tx_obj.oasis_tx.body.registryUnfreezeNode.node_id,
+                                         outVal, outValLen, pageIdx, pageCount);
         case unknownMethod:
         default:
             break;

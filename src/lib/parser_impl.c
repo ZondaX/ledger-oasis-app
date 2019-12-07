@@ -335,6 +335,18 @@ __Z_INLINE parser_error_t _readBody(parser_tx_t *v, CborValue *value) {
             break;
         }
 
+        case registryDeregisterEntity: {
+            CHECK_CBOR_MAP_LEN(value, 1);
+            CHECK_CBOR_ERR(cbor_value_enter_container(value, &contents));
+
+            CHECK_CBOR_MATCH_KEY(&contents, "node_id");
+            CHECK_CBOR_ERR(cbor_value_advance(&contents));
+            CHECK_PARSER_ERR(_readPublicKey(&contents, &v->oasis_tx.body.registryUnfreezeNode.node_id));
+            CHECK_CBOR_ERR(cbor_value_advance(&contents));
+
+            break;
+        }
+
         case unknownMethod:
         default:
             return parser_unexpected_method;
@@ -365,6 +377,8 @@ __Z_INLINE parser_error_t _readMethod(parser_tx_t *v, CborValue *value) {
         v->oasis_tx.method = stakingAmendCommissionSchedule;
     if (_matchKey(value, "registry.DeregisterEntity"))
         v->oasis_tx.method = registryDeregisterEntity;
+    if (_matchKey(value, "registry.UnfreezeNode"))
+        v->oasis_tx.method = registryUnfreezeNode;
     if (v->oasis_tx.method == unknownMethod)
         return parser_unexpected_method;
 
@@ -451,7 +465,11 @@ uint8_t _getNumItems(parser_context_t *c, parser_tx_t *v) {
             itemCount += v->oasis_tx.body.stakingAmendCommissionSchedule.bounds_length * 3;
             break;
         case registryDeregisterEntity:
-            itemCount = 0;
+            itemCount += 0;
+            break;
+        case registryUnfreezeNode:
+            itemCount += 1;
+            break;
         case unknownMethod:
         default:
             break;
