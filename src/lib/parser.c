@@ -301,6 +301,8 @@ __Z_INLINE parser_error_t parser_getDynamicItem(parser_context_t *ctx,
             }
 
             break;
+        case registryDeregisterEntity:
+            return parser_ok;
         case unknownMethod:
         default:
             break;

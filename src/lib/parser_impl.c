@@ -389,22 +389,14 @@ parser_error_t _readTx(parser_context_t *c, parser_tx_t *v) {
 
     CHECK_CBOR_TYPE(cbor_value_get_type(&it), CborMapType);
     // FIXME: expected count can be 2 or 3 or 4 see #17
-    CHECK_CBOR_MAP_LEN(&it, 4);
+    //CHECK_CBOR_MAP_LEN(&it, 4);
 
-    /*if (CborErrorGarbageAtEnd == cbor_value_validate(&it, (int)0x80000000)) {
-        return parser_unexpected_data_at_end;
-    }*/
-
-    /// Enter container
-    CborValue contents;
-    CHECK_CBOR_ERR(cbor_value_enter_container(&it, &contents));
 
     // Find method and read it first
     CborValue methodField;
     CHECK_CBOR_ERR(cbor_value_map_find_value(&it, "method", &methodField));
     CHECK_PARSER_ERR(_readMethod(v, &methodField));
 
-    /// Retrieve expected fields (this is canonical cbor, so order it deterministic)
     // FIXME: fee is optional see #17
     CborValue feeField;
     CHECK_CBOR_ERR(cbor_value_map_find_value(&it, "fee", &feeField));
@@ -414,15 +406,12 @@ parser_error_t _readTx(parser_context_t *c, parser_tx_t *v) {
     CHECK_CBOR_ERR(cbor_value_map_find_value(&it, "nonce", &nonceField));
     CHECK_PARSER_ERR(_readNonce(v, &nonceField));
 
-    CborValue bodyField;
-    CHECK_CBOR_ERR(cbor_value_map_find_value(&it, "body", &bodyField));
-    CHECK_PARSER_ERR(_readBody(v, &bodyField));
-
-    /* This wont work anymore
-    if (it.ptr != c->buffer + c->bufferLen) {
-        // End of buffer does not match end of parsed data
-        return parser_unexpected_data_at_end;
-    }*/
+    if (v->oasis_tx.method != registryDeregisterEntity) {
+        // This method doesn't have a body
+        CborValue bodyField;
+        CHECK_CBOR_ERR(cbor_value_map_find_value(&it, "body", &bodyField));
+        CHECK_PARSER_ERR(_readBody(v, &bodyField));
+    }
 
     CHECK_CBOR_ERR(cbor_value_advance(&it));
 
