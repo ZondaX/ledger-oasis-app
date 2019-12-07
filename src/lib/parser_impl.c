@@ -229,8 +229,6 @@ __Z_INLINE parser_error_t _readFee(parser_tx_t *v, CborValue *value) {
 //        "gas": 0,
 //        "amount": ""
 //    },
-    //CHECK_CBOR_MATCH_KEY(value, "fee");
-    //CHECK_CBOR_ERR(cbor_value_advance(value));
 
     /// Enter container
     CborValue contents;
