@@ -36,7 +36,7 @@ parser_error_t parser_parse(parser_context_t *ctx,
                             const uint8_t *data,
                             uint16_t dataLen) {
     parser_init(ctx, data, dataLen);
-    return _readTx(ctx, &parser_tx_obj);
+    return _read(ctx, &parser_tx_obj);
 }
 
 parser_error_t parser_validate(parser_context_t *ctx) {
@@ -316,20 +316,11 @@ __Z_INLINE parser_error_t parser_getDynamicItem(parser_context_t *ctx,
     }
 }
 
-parser_error_t parser_getItem(parser_context_t *ctx,
-                              int8_t displayIdx,
-                              char *outKey, uint16_t outKeyLen,
-                              char *outVal, uint16_t outValLen,
-                              uint8_t pageIdx, uint8_t *pageCount) {
-    MEMZERO(outKey, outKeyLen);
-    MEMZERO(outVal, outValLen);
-    snprintf(outKey, outKeyLen, "?");
-    snprintf(outVal, outValLen, " ");
-
-    if (displayIdx < 0 || displayIdx >= parser_getNumItems(ctx)) {
-        return parser_no_data;
-    }
-
+__Z_INLINE parser_error_t parser_getItemTx(parser_context_t *ctx,
+                                           int8_t displayIdx,
+                                           char *outKey, uint16_t outKeyLen,
+                                           char *outVal, uint16_t outValLen,
+                                           uint8_t pageIdx, uint8_t *pageCount) {
     if (displayIdx == 0) {
         snprintf(outKey, outKeyLen, "Type");
         return parser_getType(ctx, outVal, outValLen);
@@ -364,4 +355,57 @@ parser_error_t parser_getItem(parser_context_t *ctx,
     // Now display dynamic items
     const int8_t displayDynIdx = displayIdx - numberFixedItems;
     return parser_getDynamicItem(ctx, displayDynIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+}
+
+__Z_INLINE parser_error_t parser_getItemEntity(parser_context_t *ctx,
+                                           int8_t displayIdx,
+                                           char *outKey, uint16_t outKeyLen,
+                                           char *outVal, uint16_t outValLen,
+                                           uint8_t pageIdx, uint8_t *pageCount) {
+
+    if (displayIdx == 0) {
+        snprintf(outKey, outKeyLen, "ID");
+        return parser_printPublicKey(&parser_tx_obj.oasis_entity.id,
+                                     outVal, outValLen, pageIdx, pageCount);
+    }
+
+    if (displayIdx <= parser_tx_obj.oasis_entity.nodes_length) {
+        snprintf(outKey, outKeyLen, "Node [%i]", displayIdx -1);
+        // TODO: Get it dynamically
+        return parser_printPublicKey(&parser_tx_obj.oasis_entity.node,
+                                     outVal, outValLen, pageIdx, pageCount);
+    }
+
+    if (displayIdx - parser_tx_obj.oasis_entity.nodes_length == 1) {
+        if (parser_tx_obj.oasis_entity.allow_entity_signed_nodes) {
+            snprintf(outKey, outKeyLen, "Allowed");
+        } else {
+            snprintf(outKey, outKeyLen, "Not Allowed");
+        }
+        return parser_ok;
+    }
+
+}
+
+parser_error_t parser_getItem(parser_context_t *ctx,
+                              int8_t displayIdx,
+                              char *outKey, uint16_t outKeyLen,
+                              char *outVal, uint16_t outValLen,
+                              uint8_t pageIdx, uint8_t *pageCount) {
+    MEMZERO(outKey, outKeyLen);
+    MEMZERO(outVal, outValLen);
+    snprintf(outKey, outKeyLen, "?");
+    snprintf(outVal, outValLen, " ");
+
+    if (displayIdx < 0 || displayIdx >= parser_getNumItems(ctx)) {
+        return parser_no_data;
+    }
+
+    // REVIEW: can't verify type in C
+    if (parser_tx_obj.is_tx) {
+        return parser_getItemTx(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+    } else {
+        return parser_getItemEntity(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+    }
+
 }

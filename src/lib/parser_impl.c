@@ -388,7 +388,73 @@ __Z_INLINE parser_error_t _readMethod(parser_tx_t *v, CborValue *value) {
     return parser_ok;
 }
 
-parser_error_t _readTx(parser_context_t *c, parser_tx_t *v) {
+__Z_INLINE parser_error_t _readTx(parser_tx_t *v, CborValue *it) {
+
+    MEMZERO(&v->oasis_tx, sizeof(oasis_tx_t));
+
+    CHECK_CBOR_TYPE(cbor_value_get_type(it), CborMapType);
+    // FIXME: expected count can be 2 or 3 or 4 see #17
+    //CHECK_CBOR_MAP_LEN(&it, 4);
+
+
+    // Find method and read it first
+    CborValue methodField;
+    CHECK_CBOR_ERR(cbor_value_map_find_value(it, "method", &methodField));
+    CHECK_PARSER_ERR(_readMethod(v, &methodField));
+
+    // FIXME: fee is optional see #17
+    CborValue feeField;
+    CHECK_CBOR_ERR(cbor_value_map_find_value(it, "fee", &feeField));
+    CHECK_PARSER_ERR(_readFee(v, &feeField));
+
+    CborValue nonceField;
+    CHECK_CBOR_ERR(cbor_value_map_find_value(it, "nonce", &nonceField));
+    CHECK_PARSER_ERR(_readNonce(v, &nonceField));
+
+    if (v->oasis_tx.method != registryDeregisterEntity) {
+        // This method doesn't have a body
+        CborValue bodyField;
+        CHECK_CBOR_ERR(cbor_value_map_find_value(it, "body", &bodyField));
+        CHECK_PARSER_ERR(_readBody(v, &bodyField));
+    }
+
+    return parser_ok;
+}
+
+__Z_INLINE parser_error_t _readEntity(parser_tx_t *v, CborValue *value) {
+    /* Not using cbor_value_map_find because Cbor canonical order should be respected */
+
+    // REVIEW: not sure about that...
+    MEMZERO(&v->oasis_entity, sizeof(oasis_entity_t));
+
+    CborValue contents;
+
+    // expect id, nodes, allow_entity_signed_nodes
+    CHECK_CBOR_MAP_LEN(value, 3);
+    CHECK_CBOR_ERR(cbor_value_enter_container(value, &contents));
+
+    CHECK_CBOR_MATCH_KEY(&contents, "id");
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+    CHECK_PARSER_ERR(_readPublicKey(&contents, &v->oasis_entity.id));
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+
+    CHECK_CBOR_MATCH_KEY(&contents, "nodes");
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+    // Only get length
+    CHECK_CBOR_TYPE(cbor_value_get_type(&contents), CborArrayType);
+    cbor_value_get_array_length(&contents, &v->oasis_entity.nodes_length);
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+
+    CHECK_CBOR_MATCH_KEY(&contents, "allow_entity_signed_nodes");
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+    CHECK_CBOR_TYPE(cbor_value_get_type(&contents), CborBooleanType);
+    CHECK_CBOR_ERR(cbor_value_get_boolean(&contents, &v->oasis_entity.allow_entity_signed_nodes));
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+
+    return parser_ok;
+}
+
+parser_error_t _read(parser_context_t *c, parser_tx_t *v) {
     CborValue it;
     CHECK_CBOR_ERR(cbor_parser_init(c->buffer,
                                     c->bufferLen,
@@ -400,32 +466,24 @@ parser_error_t _readTx(parser_context_t *c, parser_tx_t *v) {
         return parser_unexpected_buffer_end;
     }
 
-    MEMZERO(&v->oasis_tx, sizeof(oasis_tx_t));
+    if (!cbor_value_is_map(&it)) {
+        return parser_unexpected_type;
+    }
 
-    CHECK_CBOR_TYPE(cbor_value_get_type(&it), CborMapType);
-    // FIXME: expected count can be 2 or 3 or 4 see #17
-    //CHECK_CBOR_MAP_LEN(&it, 4);
+    // ENTITY OR TX ?
+    // REVIEW: Might be a better way to do it ?
+    CborValue idField;
+    CHECK_CBOR_ERR(cbor_value_map_find_value(&it, "id", &idField));
 
 
-    // Find method and read it first
-    CborValue methodField;
-    CHECK_CBOR_ERR(cbor_value_map_find_value(&it, "method", &methodField));
-    CHECK_PARSER_ERR(_readMethod(v, &methodField));
-
-    // FIXME: fee is optional see #17
-    CborValue feeField;
-    CHECK_CBOR_ERR(cbor_value_map_find_value(&it, "fee", &feeField));
-    CHECK_PARSER_ERR(_readFee(v, &feeField));
-
-    CborValue nonceField;
-    CHECK_CBOR_ERR(cbor_value_map_find_value(&it, "nonce", &nonceField));
-    CHECK_PARSER_ERR(_readNonce(v, &nonceField));
-
-    if (v->oasis_tx.method != registryDeregisterEntity) {
-        // This method doesn't have a body
-        CborValue bodyField;
-        CHECK_CBOR_ERR(cbor_value_map_find_value(&it, "body", &bodyField));
-        CHECK_PARSER_ERR(_readBody(v, &bodyField));
+    if (cbor_value_get_type(&idField) == CborInvalidType) {
+        // READ TX
+        CHECK_CBOR_ERR(_readTx(v, &it));
+        v->is_tx = true;
+    } else {
+        // READ ENTITY
+        CHECK_CBOR_ERR(_readEntity(v, &it));
+        v->is_tx = false;
     }
 
     CHECK_CBOR_ERR(cbor_value_advance(&it));
@@ -445,8 +503,16 @@ parser_error_t _validateTx(parser_context_t *c, parser_tx_t *v) {
 }
 
 uint8_t _getNumItems(parser_context_t *c, parser_tx_t *v) {
+    uint8_t itemCount = 0;
+
+    // Entity (not a tx)
+    if (!v->is_tx) {
+        itemCount = 2 + v->oasis_entity.nodes_length;
+        return itemCount;
+    }
+
     // typical tx: Type, Fee, Gas, + Body
-    uint8_t itemCount = 3;
+    itemCount = 3;
 
     switch (v->oasis_tx.method) {
         case stakingTransfer:

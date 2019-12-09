@@ -28,7 +28,7 @@ parser_error_t parser_init(parser_context_t *ctx,
                            const uint8_t *buffer,
                            uint16_t bufferSize);
 
-parser_error_t _readTx(parser_context_t *c, parser_tx_t *v);
+parser_error_t _read(parser_context_t *c, parser_tx_t *v);
 
 parser_error_t _validateTx(parser_context_t *c, parser_tx_t *v);
 

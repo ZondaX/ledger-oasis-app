@@ -19,6 +19,7 @@
 
 #include <cbor.h>
 #include <coin.h>
+#include <zxtypes.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -100,7 +101,21 @@ typedef struct {
 } oasis_tx_t;
 
 typedef struct {
-    oasis_tx_t oasis_tx;
+    publickey_t id;
+    // We are going to read dynamically like for stakingAmendCommissionSchedule
+    publickey_t node;
+    size_t nodes_length;
+    bool allow_entity_signed_nodes;
+} oasis_entity_t;
+
+typedef struct {
+
+    union {
+        oasis_tx_t oasis_tx;
+        oasis_entity_t oasis_entity;
+    };
+
+    bool is_tx;
     CborParser parser;
 } parser_tx_t;
 
