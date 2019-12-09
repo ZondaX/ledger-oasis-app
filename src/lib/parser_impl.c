@@ -364,6 +364,9 @@ __Z_INLINE parser_error_t _readNonce(parser_tx_t *v, CborValue *value) {
 
 __Z_INLINE parser_error_t _readMethod(parser_tx_t *v, CborValue *value) {
 
+    // Verify it is well formed (no missing bytes...)
+    CHECK_CBOR_ERR(cbor_value_validate_basic(value));
+    
     v->oasis_tx.method = unknownMethod;
     if (_matchKey(value, "staking.Transfer"))
         v->oasis_tx.method = stakingTransfer;
