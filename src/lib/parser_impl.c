@@ -48,10 +48,21 @@ parser_error_t parser_init(parser_context_t *ctx, const uint8_t *buffer, uint16_
 
 const char *parser_getErrorDescription(parser_error_t err) {
     switch (err) {
+        // General errors
         case parser_ok:
             return "No error";
         case parser_no_data:
             return "No more data";
+        case parser_init_context_empty:
+            return "Initialized empty context";
+        case parser_display_idx_out_of_range:
+            return "display_idx_out_of_range";
+        case parser_display_page_out_of_range:
+            return "display_page_out_of_range";
+
+        // Coin specific
+        case parser_cbor_unexpected:
+            return "unexpected CBOR error";
         case parser_unexpected_type:
             return "Unexpected data type";
         case parser_unexpected_method:
@@ -72,16 +83,13 @@ const char *parser_getErrorDescription(parser_error_t err) {
             return "Unexpected field";
         case parser_value_out_of_range:
             return "Value out of range";
-        case parser_cbor_unexpected:
-            return "unexpected CBOR error";
-        ///////////
+        /////////// Context specific
         case parser_context_mismatch:
             return "context prefix is invalid";
         case parser_context_unexpected_size:
             return "context unexpected size";
         case parser_context_invalid_chars:
             return "context invalid chars";
-
         default:
             return "Unrecognized error code";
     }
