@@ -104,11 +104,10 @@ void extractBip44(uint32_t rx, uint32_t offset) {
         THROW(APDU_CODE_DATA_INVALID);
     }
 
-    // Check all items are hardened
-    for (uint8_t i = 0; i < BIP44_LEN_DEFAULT; i++) {
-        if ((bip44Path[0] & 0x80000000u) == 0) {
-            THROW(APDU_CODE_DATA_INVALID);
-        }
+    // Check first two items are hardened
+    if ((bip44Path[0] & 0x80000000u) == 0 ||
+        (bip44Path[1] & 0x80000000u) == 0) {
+        THROW(APDU_CODE_DATA_INVALID);
     }
 }
 
