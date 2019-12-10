@@ -88,7 +88,6 @@ typedef struct {
             commissionRateBoundStep_t bound;
             size_t bounds_length;
         } stakingAmendCommissionSchedule;
-
         struct {
             publickey_t node_id;
         } registryUnfreezeNode;

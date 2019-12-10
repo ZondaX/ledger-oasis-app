@@ -334,7 +334,6 @@ __Z_INLINE parser_error_t _readBody(parser_tx_t *v, CborValue *value) {
 
             break;
         }
-
         case registryDeregisterEntity: {
             CHECK_CBOR_MAP_LEN(value, 1);
             CHECK_CBOR_ERR(cbor_value_enter_container(value, &contents));
@@ -346,7 +345,6 @@ __Z_INLINE parser_error_t _readBody(parser_tx_t *v, CborValue *value) {
 
             break;
         }
-
         case unknownMethod:
         default:
             return parser_unexpected_method;
