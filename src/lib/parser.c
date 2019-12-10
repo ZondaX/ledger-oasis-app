@@ -305,15 +305,22 @@ __Z_INLINE parser_error_t parser_getDynamicItem(parser_context_t *ctx,
 
             break;
         case registryDeregisterEntity:
-            return parser_ok;
+            *pageCount = 0;
+            return parser_no_data;
+
         case registryUnfreezeNode:
-            snprintf(outKey, outKeyLen, "Node ID");
-            return parser_printPublicKey(&parser_tx_obj.oasis_tx.body.registryUnfreezeNode.node_id,
-                                         outVal, outValLen, pageIdx, pageCount);
+            if (displayDynamicIdx == 0) {
+                snprintf(outKey, outKeyLen, "Node ID");
+                return parser_printPublicKey(&parser_tx_obj.oasis_tx.body.registryUnfreezeNode.node_id,
+                                             outVal, outValLen, pageIdx, pageCount);
+            }
         case unknownMethod:
         default:
             break;
     }
+
+    *pageCount = 0;
+    return parser_no_data;
 }
 
 parser_error_t parser_getItem(parser_context_t *ctx,
