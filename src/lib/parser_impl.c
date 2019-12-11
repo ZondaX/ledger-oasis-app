@@ -446,6 +446,11 @@ __Z_INLINE parser_error_t _readEntity(parser_tx_t *v, CborValue *value) {
     // Only get length
     CHECK_CBOR_TYPE(cbor_value_get_type(&contents), CborArrayType);
     cbor_value_get_array_length(&contents, &v->oasis.oasis_entity.nodes_length);
+
+    // too much nodes id in the blob to be print
+    if (v->oasis.oasis_entity.nodes_length > MAX_ENTITY_NODES)
+        return parser_unexpected_number_items;
+
     CHECK_CBOR_ERR(cbor_value_advance(&contents));
 
     CHECK_CBOR_MATCH_KEY(&contents, "allow_entity_signed_nodes");
