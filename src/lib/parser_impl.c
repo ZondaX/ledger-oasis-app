@@ -75,8 +75,6 @@ const char *parser_getErrorDescription(parser_error_t err) {
             return "Unexpected number of items";
         case parser_unexpected_data_at_end:
             return "Unexpected data at end";
-        case parser_init_context_empty:
-            return "Initialized empty context";
         case parser_unexpected_characters:
             return "Unexpected characters";
         case parser_unexpected_field:
@@ -372,7 +370,7 @@ __Z_INLINE parser_error_t _readMethod(parser_tx_t *v, CborValue *value) {
 
     // Verify it is well formed (no missing bytes...)
     CHECK_CBOR_ERR(cbor_value_validate_basic(value));
-    
+
     v->oasis_tx.method = unknownMethod;
     if (_matchKey(value, "staking.Transfer"))
         v->oasis_tx.method = stakingTransfer;

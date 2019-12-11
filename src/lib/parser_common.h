@@ -28,7 +28,7 @@ typedef enum {
     parser_no_data,
     parser_init_context_empty,
     parser_display_idx_out_of_range,
-    parser_display_page_out_of_range
+    parser_display_page_out_of_range,
     // Coin specific
     parser_cbor_unexpected,
     parser_unexpected_type,
