@@ -75,8 +75,6 @@ const char *parser_getErrorDescription(parser_error_t err) {
             return "Unexpected number of items";
         case parser_unexpected_data_at_end:
             return "Unexpected data at end";
-        case parser_init_context_empty:
-            return "Initialized empty context";
         case parser_unexpected_characters:
             return "Unexpected characters";
         case parser_unexpected_field:
