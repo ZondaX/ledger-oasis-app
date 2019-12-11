@@ -93,7 +93,7 @@ typedef struct {
         struct {
             publickey_t node_id;
         } registryUnfreezeNode;
-        
+
     } body;
 
     uint64_t nonce;
@@ -117,8 +117,8 @@ typedef enum {
 typedef struct {
 
     union {
-        oasis_tx_t oasis_tx;
-        oasis_entity_t oasis_entity;
+        oasis_tx_t tx;
+        oasis_entity_t entity;
     } oasis;
 
     oasis_blob_type_e type;
