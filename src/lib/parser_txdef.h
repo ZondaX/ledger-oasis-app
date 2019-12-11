@@ -108,14 +108,20 @@ typedef struct {
     bool allow_entity_signed_nodes;
 } oasis_entity_t;
 
+typedef enum {
+    unknownType,
+    txType,
+    entityType
+} oasis_blob_type_e;
+
 typedef struct {
 
     union {
         oasis_tx_t oasis_tx;
         oasis_entity_t oasis_entity;
-    };
+    } oasis;
 
-    bool is_tx;
+    oasis_blob_type_e type;
     CborParser parser;
 } parser_tx_t;
 
