@@ -376,8 +376,10 @@ __Z_INLINE parser_error_t parser_getItemEntity(parser_context_t *ctx,
                                      outVal, outValLen, pageIdx, pageCount);
     }
 
-    if (displayIdx <= parser_tx_obj.oasis_entity.nodes_length) {
-        snprintf(outKey, outKeyLen, "Node [%i]", displayIdx -1);
+    if (displayIdx <= (int) parser_tx_obj.oasis_entity.nodes_length) {
+        const int8_t index = displayIdx -1;
+
+        snprintf(outKey, outKeyLen, "Node [%i]", index);
 
         parser_error_t err = _getNodesIdAtIndex(ctx, &parser_tx_obj, index);
         if (err != parser_ok)
