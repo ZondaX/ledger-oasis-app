@@ -398,6 +398,7 @@ __Z_INLINE parser_error_t parser_getItemEntity(parser_context_t *ctx,
         return parser_ok;
     }
 
+    return parser_no_data;
 }
 
 parser_error_t parser_getItem(parser_context_t *ctx,
