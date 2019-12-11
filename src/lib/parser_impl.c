@@ -654,3 +654,27 @@ parser_error_t _getCommissionBoundStepAtIndex(parser_context_t *c, parser_tx_t *
     return parser_ok;
 
 }
+
+parser_error_t _getNodesIdAtIndex(parser_context_t *c, parser_tx_t *v, uint8_t index) {
+    CborValue it;
+    CHECK_CBOR_ERR(cbor_parser_init(c->buffer,
+                                    c->bufferLen,
+                                    c->offset,
+                                    &v->parser,
+                                    &it));
+
+    if (cbor_value_at_end(&it)) {
+        return parser_unexpected_buffer_end;
+    }
+
+    CborValue nodesContainer;
+    CHECK_CBOR_ERR(_getBoundsContainer(&it, &nodesContainer));
+
+    for (int i = 0; i < index; i++) {
+        CHECK_CBOR_ERR(cbor_value_advance(&nodesContainer));
+    }
+
+    CHECK_CBOR_ERR(_readPublicKey(&nodesContainer, &v->oasis_entity.node));
+
+    return parser_ok;
+}

@@ -371,7 +371,11 @@ __Z_INLINE parser_error_t parser_getItemEntity(parser_context_t *ctx,
 
     if (displayIdx <= parser_tx_obj.oasis_entity.nodes_length) {
         snprintf(outKey, outKeyLen, "Node [%i]", displayIdx -1);
-        // TODO: Get it dynamically
+
+        parser_error_t err = _getNodesIdAtIndex(ctx, &parser_tx_obj, index);
+        if (err != parser_ok)
+            return err;
+
         return parser_printPublicKey(&parser_tx_obj.oasis_entity.node,
                                      outVal, outValLen, pageIdx, pageCount);
     }
