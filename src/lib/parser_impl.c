@@ -507,6 +507,16 @@ parser_error_t _read(parser_context_t *c, parser_tx_t *v) {
 
 parser_error_t _validateTx(parser_context_t *c, parser_tx_t *v) {
     // TODO: Add any additional sensible validation here
+    CborValue it;
+    CHECK_CBOR_ERR(cbor_parser_init(c->buffer,
+                                    c->bufferLen,
+                                    c->offset,
+                                    &v->parser,
+                                    &it));
+
+    // validate CBOR canonical order
+    CHECK_CBOR_ERR(cbor_value_validate(&it, CborValidateCanonicalFormat));
+
     return parser_ok;
 }
 
