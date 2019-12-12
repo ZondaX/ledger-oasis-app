@@ -676,7 +676,7 @@ parser_error_t _getNodesIdAtIndex(parser_context_t *c, parser_tx_t *v, uint8_t i
     }
 
     CborValue nodesContainer;
-    CHECK_CBOR_ERR(_getBoundsContainer(&it, &nodesContainer));
+    CHECK_CBOR_ERR(cbor_value_map_find_value(&it, "nodes", &nodesContainer));
 
     for (int i = 0; i < index; i++) {
         CHECK_CBOR_ERR(cbor_value_advance(&nodesContainer));
