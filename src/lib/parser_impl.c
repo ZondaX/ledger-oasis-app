@@ -396,31 +396,40 @@ __Z_INLINE parser_error_t _readTx(parser_tx_t *v, CborValue *it) {
 
     MEMZERO(&v->oasis.tx, sizeof(oasis_tx_t));
 
-    CHECK_CBOR_TYPE(cbor_value_get_type(it), CborMapType);
-    // FIXME: expected count can be 2 or 3 or 4 see #17
-    //CHECK_CBOR_MAP_LEN(&it, 4);
+    uint8_t valuesCount = 0;
 
+    CHECK_CBOR_TYPE(cbor_value_get_type(it), CborMapType);
 
     // Find method and read it first
     CborValue methodField;
     CHECK_CBOR_ERR(cbor_value_map_find_value(it, "method", &methodField));
     CHECK_PARSER_ERR(_readMethod(v, &methodField));
+    valuesCount++;
 
     // FIXME: fee is optional see #17
     CborValue feeField;
     CHECK_CBOR_ERR(cbor_value_map_find_value(it, "fee", &feeField));
-    CHECK_PARSER_ERR(_readFee(v, &feeField));
+    // We have fee
+    if (cbor_value_is_valid(&feeField)) {
+        CHECK_PARSER_ERR(_readFee(v, &feeField));
+        valuesCount++;
+    }
 
     CborValue nonceField;
     CHECK_CBOR_ERR(cbor_value_map_find_value(it, "nonce", &nonceField));
     CHECK_PARSER_ERR(_readNonce(v, &nonceField));
+    valuesCount++;
 
     if (v->oasis.tx.method != registryDeregisterEntity) {
         // This method doesn't have a body
         CborValue bodyField;
         CHECK_CBOR_ERR(cbor_value_map_find_value(it, "body", &bodyField));
         CHECK_PARSER_ERR(_readBody(v, &bodyField));
+        valuesCount++;
     }
+
+    // Verify there is no extra fields in transaction
+    CHECK_CBOR_MAP_LEN(&it, valuesCount);
 
     return parser_ok;
 }
