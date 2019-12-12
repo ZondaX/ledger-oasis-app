@@ -34,6 +34,7 @@ extern "C" {
 
 #define MAX_RATES           10
 #define MAX_CONTEXT_SIZE    64
+#define MAX_ENTITY_NODES    16
 
 #ifdef __cplusplus
 }
