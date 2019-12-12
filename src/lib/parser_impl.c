@@ -675,8 +675,16 @@ parser_error_t _getNodesIdAtIndex(parser_context_t *c, parser_tx_t *v, uint8_t i
         return parser_unexpected_buffer_end;
     }
 
+    if (!cbor_value_is_map(&it)) {
+        return parser_unexpected_type;
+    }
+
     CborValue nodesContainer;
     CHECK_CBOR_ERR(cbor_value_map_find_value(&it, "nodes", &nodesContainer));
+
+    if (!cbor_value_is_array(&nodesContainer)) {
+        return parser_unexpected_type;
+    }
 
     for (int i = 0; i < index; i++) {
         CHECK_CBOR_ERR(cbor_value_advance(&nodesContainer));
