@@ -46,11 +46,8 @@ typedef struct {
     size_t len;
 } quantity_t;
 
-typedef struct {
-    // REVIEW: signature is 64 bytes
-    uint8_t buffer[64];
-    size_t len;
-} raw_signature_t;
+typedef uint8_t raw_signature_t[64];
+
 
 typedef struct {
     publickey_t public_key;

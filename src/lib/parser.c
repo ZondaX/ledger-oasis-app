@@ -188,11 +188,11 @@ __Z_INLINE parser_error_t parser_printSignature(raw_signature_t *s,
                                                 char *outVal, uint16_t outValLen,
                                                 uint8_t pageIdx, uint8_t *pageCount) {
 
-    // REVIEW
-    char outBuffer[128];
+    // 64 * 2 + 1 (one more for the zero termination)
+    char outBuffer[129];
     MEMZERO(outBuffer, sizeof(outBuffer));
 
-    parseHexString(outBuffer, s->buffer);
+    array_to_hexstr(outBuffer, s->buffer, 64);
     pageString(outVal, outValLen, outBuffer, pageIdx, pageCount);
     return parser_ok;
 }
