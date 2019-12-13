@@ -21,6 +21,7 @@ extern "C" {
 #endif
 
 #include "parser_impl.h"
+#include "hexutils.h"
 
 const char *parser_getErrorDescription(parser_error_t err);
 

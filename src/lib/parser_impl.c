@@ -135,6 +135,39 @@ __Z_INLINE parser_error_t _readQuantity(CborValue *value, quantity_t *out) {
     return parser_ok;
 }
 
+__Z_INLINE parser_error_t _readRawSignature(CborValue *value, raw_signature_t *out) {
+    CHECK_CBOR_TYPE(cbor_value_get_type(value), CborByteStringType);
+    CborValue dummy;
+    size_t len = sizeof(raw_signature_t);
+    CHECK_CBOR_ERR(cbor_value_copy_byte_string(value, (uint8_t *) out, &len, &dummy));
+    if (len != sizeof(raw_signature_t)) {
+        return parser_unexpected_value;
+    }
+    return parser_ok;
+}
+
+__Z_INLINE parser_error_t _readSignature(CborValue *value, signature_t *out) {
+// {
+//   "signature": ...
+//   "public_key": ...
+// }
+
+    CborValue contents;
+    CHECK_CBOR_TYPE(cbor_value_get_type(value), CborMapType);
+    CHECK_CBOR_MAP_LEN(value, 2);
+    CHECK_CBOR_ERR(cbor_value_enter_container(value, &contents));
+
+    CHECK_CBOR_MATCH_KEY(&contents, "signature");
+    CHECK_CBOR_ERR(_readRawSignature(&contents, &out->raw_signature));
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+
+    CHECK_CBOR_MATCH_KEY(&contents, "public_key");
+    CHECK_CBOR_ERR(_readPublicKey(&contents, &out->public_key));
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
+
+    return parser_ok;
+}
+
 __Z_INLINE parser_error_t _readRate(CborValue *value, commissionRateStep_t *out) {
 //      {
 //        "rate": "0",
@@ -351,6 +384,24 @@ __Z_INLINE parser_error_t _readBody(parser_tx_t *v, CborValue *value) {
 
             break;
         }
+        case registryRegisterEntity : {
+            CHECK_CBOR_MAP_LEN(value, 2);
+            CHECK_CBOR_ERR(cbor_value_enter_container(value, &contents));
+
+            CHECK_CBOR_MATCH_KEY(&contents, "signature");
+            CHECK_CBOR_ERR(cbor_value_advance(&contents));
+            // Read signature
+            CHECK_CBOR_ERR(_readSignature(&contents, &v->oasis.tx.body.registryRegisterEntity.signature));
+            CHECK_CBOR_ERR(cbor_value_advance(&contents));
+
+            CHECK_CBOR_MATCH_KEY(&contents, "untrusted_raw_value");
+            CHECK_CBOR_ERR(cbor_value_advance(&contents));
+            // REVIEW: just do basic verification
+            CHECK_CBOR_ERR(cbor_value_advance(&contents));
+
+            break;
+        }
+
         case unknownMethod:
         default:
             return parser_unexpected_method;
@@ -386,6 +437,8 @@ __Z_INLINE parser_error_t _readMethod(parser_tx_t *v, CborValue *value) {
         v->oasis.tx.method = registryDeregisterEntity;
     if (_matchKey(value, "registry.UnfreezeNode"))
         v->oasis.tx.method = registryUnfreezeNode;
+    if (_matchKey(value, "registry.RegisterEntity"))
+        v->oasis.tx.method = registryRegisterEntity;
     if (v->oasis.tx.method == unknownMethod)
         return parser_unexpected_method;
 
@@ -556,6 +609,10 @@ uint8_t _getNumItems(parser_context_t *c, parser_tx_t *v) {
             break;
         case registryUnfreezeNode:
             itemCount += 1;
+            break;
+        case registryRegisterEntity:
+            // REVIEW: only 2 because we ignore the raw_untrusted_value
+            itemCount += 2;
             break;
         case unknownMethod:
         default:

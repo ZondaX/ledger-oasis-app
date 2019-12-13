@@ -184,6 +184,19 @@ __Z_INLINE parser_error_t parser_printPublicKey(publickey_t *pk,
     return parser_ok;
 }
 
+__Z_INLINE parser_error_t parser_printSignature(raw_signature_t *s,
+                                                char *outVal, uint16_t outValLen,
+                                                uint8_t pageIdx, uint8_t *pageCount) {
+
+    // REVIEW
+    char outBuffer[128];
+    MEMZERO(outBuffer, sizeof(outBuffer));
+
+    parseHexString(outBuffer, s->buffer);
+    pageString(outVal, outValLen, outBuffer, pageIdx, pageCount);
+    return parser_ok;
+}
+
 __Z_INLINE parser_error_t parser_getDynamicItem(parser_context_t *ctx,
                                                 int8_t displayDynamicIdx,
                                                 char *outKey, uint16_t outKeyLen,
@@ -314,6 +327,18 @@ __Z_INLINE parser_error_t parser_getDynamicItem(parser_context_t *ctx,
                 return parser_printPublicKey(&parser_tx_obj.oasis.tx.body.registryUnfreezeNode.node_id,
                                              outVal, outValLen, pageIdx, pageCount);
             }
+        case registryRegisterEntity: {
+            switch (displayDynamicIdx) {
+                case 0:
+                    snprintf(outKey, outKeyLen, "Public key");
+                    return parser_printPublicKey(&parser_tx_obj.oasis.tx.body.registryRegisterEntity.signature.public_key,
+                                          outVal, outValLen, pageIdx, pageCount);
+                case 1:
+                    snprintf(outKey, outKeyLen, "Signature");
+                    return parser_printSignature(&parser_tx_obj.oasis.tx.body.registryRegisterEntity.signature.raw_signature,
+                                         outVal, outValLen, pageIdx, pageCount);
+            }
+        }
         case unknownMethod:
         default:
             break;
