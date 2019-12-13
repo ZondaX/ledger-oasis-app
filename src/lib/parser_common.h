@@ -45,6 +45,9 @@ typedef enum {
     parser_context_unexpected_size,
     parser_context_invalid_chars,
     parser_context_unknown_prefix,
+    // Required fields
+    parser_required_nonce,
+    parser_required_method,
 } parser_error_t;
 
 typedef struct {

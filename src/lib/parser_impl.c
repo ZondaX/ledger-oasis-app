@@ -88,6 +88,11 @@ const char *parser_getErrorDescription(parser_error_t err) {
             return "context unexpected size";
         case parser_context_invalid_chars:
             return "context invalid chars";
+         // Required fields error
+        case parser_required_nonce:
+            return "Required field nonce";
+        case parser_required_method:
+            return "Required field method";
         default:
             return "Unrecognized error code";
     }
@@ -256,13 +261,8 @@ __Z_INLINE parser_error_t _readFee(parser_tx_t *v, CborValue *value) {
     // Close container
     CHECK_CBOR_ERR(cbor_value_leave_container(value, &contents));
 
-    return parser_ok;
-}
+    v->oasis.tx.has_fee = true;
 
-__Z_INLINE parser_error_t _skipBody(parser_tx_t *v, CborValue *value) {
-    CHECK_CBOR_MATCH_KEY(value, "body");
-    CHECK_CBOR_ERR(cbor_value_advance(value));
-    CHECK_CBOR_ERR(cbor_value_advance(value));
     return parser_ok;
 }
 
@@ -360,6 +360,9 @@ __Z_INLINE parser_error_t _readBody(parser_tx_t *v, CborValue *value) {
 }
 
 __Z_INLINE parser_error_t _readNonce(parser_tx_t *v, CborValue *value) {
+    if (!cbor_value_is_valid(value))
+        return parser_required_nonce;
+
     CHECK_CBOR_TYPE(cbor_value_get_type(value), CborIntegerType);
     CHECK_CBOR_ERR(cbor_value_get_uint64(value, &v->oasis.tx.nonce));
 
@@ -367,6 +370,9 @@ __Z_INLINE parser_error_t _readNonce(parser_tx_t *v, CborValue *value) {
 }
 
 __Z_INLINE parser_error_t _readMethod(parser_tx_t *v, CborValue *value) {
+
+    if (!cbor_value_is_valid(value))
+        return parser_required_method;
 
     // Verify it is well formed (no missing bytes...)
     CHECK_CBOR_ERR(cbor_value_validate_basic(value));
@@ -396,31 +402,41 @@ __Z_INLINE parser_error_t _readTx(parser_tx_t *v, CborValue *it) {
 
     MEMZERO(&v->oasis.tx, sizeof(oasis_tx_t));
 
-    CHECK_CBOR_TYPE(cbor_value_get_type(it), CborMapType);
-    // FIXME: expected count can be 2 or 3 or 4 see #17
-    //CHECK_CBOR_MAP_LEN(&it, 4);
+    uint8_t valuesCount = 0;
 
+    CHECK_CBOR_TYPE(cbor_value_get_type(it), CborMapType);
 
     // Find method and read it first
     CborValue methodField;
     CHECK_CBOR_ERR(cbor_value_map_find_value(it, "method", &methodField));
     CHECK_PARSER_ERR(_readMethod(v, &methodField));
+    valuesCount++;
 
-    // FIXME: fee is optional see #17
     CborValue feeField;
     CHECK_CBOR_ERR(cbor_value_map_find_value(it, "fee", &feeField));
-    CHECK_PARSER_ERR(_readFee(v, &feeField));
+    v->oasis.tx.has_fee = false;
+
+    // We have fee
+    if (cbor_value_is_valid(&feeField)) {
+        CHECK_PARSER_ERR(_readFee(v, &feeField));
+        valuesCount++;
+    }
 
     CborValue nonceField;
     CHECK_CBOR_ERR(cbor_value_map_find_value(it, "nonce", &nonceField));
     CHECK_PARSER_ERR(_readNonce(v, &nonceField));
+    valuesCount++;
 
     if (v->oasis.tx.method != registryDeregisterEntity) {
         // This method doesn't have a body
         CborValue bodyField;
         CHECK_CBOR_ERR(cbor_value_map_find_value(it, "body", &bodyField));
         CHECK_PARSER_ERR(_readBody(v, &bodyField));
+        valuesCount++;
     }
+
+    // Verify there is no extra fields in transaction
+    CHECK_CBOR_MAP_LEN(it, valuesCount);
 
     return parser_ok;
 }
@@ -521,16 +537,17 @@ parser_error_t _validateTx(parser_context_t *c, parser_tx_t *v) {
 }
 
 uint8_t _getNumItems(parser_context_t *c, parser_tx_t *v) {
-    uint8_t itemCount = 0;
+    // typical tx: Type, Fee, Gas, + Body
+    uint8_t itemCount = 3;
 
     // Entity (not a tx)
-    if (v->type == txType) {
+    if (v->type == entityType) {
         itemCount = 2 + v->oasis.entity.nodes_length;
         return itemCount;
     }
 
-    // typical tx: Type, Fee, Gas, + Body
-    itemCount = 3;
+    if (!v->oasis.tx.has_fee)
+        itemCount = 1;
 
     switch (v->oasis.tx.method) {
         case stakingTransfer:

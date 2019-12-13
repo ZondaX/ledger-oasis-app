@@ -61,6 +61,7 @@ typedef struct {
 typedef struct {
     uint64_t fee_gas;
     quantity_t fee_amount;
+    bool has_fee;
 
     // Union type will depend on method
     union {

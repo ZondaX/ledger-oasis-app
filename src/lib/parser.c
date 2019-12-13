@@ -189,6 +189,7 @@ __Z_INLINE parser_error_t parser_getDynamicItem(parser_context_t *ctx,
                                                 char *outKey, uint16_t outKeyLen,
                                                 char *outVal, uint16_t outValLen,
                                                 uint8_t pageIdx, uint8_t *pageCount) {
+
     // Variable items
     switch (parser_tx_obj.oasis.tx.method) {
         case stakingTransfer:
@@ -328,23 +329,26 @@ __Z_INLINE parser_error_t parser_getItemTx(parser_context_t *ctx,
                                            char *outKey, uint16_t outKeyLen,
                                            char *outVal, uint16_t outValLen,
                                            uint8_t pageIdx, uint8_t *pageCount) {
+
     if (displayIdx == 0) {
         snprintf(outKey, outKeyLen, "Type");
         return parser_getType(ctx, outVal, outValLen);
     }
 
-    if (displayIdx == 1) {
+    if (displayIdx == 1 && parser_tx_obj.oasis.tx.has_fee) {
         snprintf(outKey, outKeyLen, "Fee Amount");
         return parser_printQuantity(&parser_tx_obj.oasis.tx.fee_amount, outVal, outValLen, pageIdx, pageCount);
     }
 
-    if (displayIdx == 2) {
+    if (displayIdx == 2 && parser_tx_obj.oasis.tx.has_fee) {
         snprintf(outKey, outKeyLen, "Fee Gas");
         uint64_to_str(outVal, outValLen, parser_tx_obj.oasis.tx.fee_gas);
         return parser_ok;
     }
 
     uint8_t numberFixedItems = 3;
+    if (!parser_tx_obj.oasis.tx.has_fee)
+        numberFixedItems = 1;
 
     // Display context?
     if (parser_customContextEnabled()) {
