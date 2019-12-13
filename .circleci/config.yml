@@ -1,0 +1,17 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: zondax/ledger-docker-bolos:latest
+    environment:
+      - BOLOS_SDK=/home/test/project/deps/nanos-secure-sdk
+      - BOLOS_ENV=/opt/bolos
+    steps:
+      - checkout
+      - run: cd /home/test/project && make
+
+workflows:
+  version: 2
+  build_all:
+    jobs:
+      - build
