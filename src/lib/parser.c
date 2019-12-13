@@ -189,6 +189,7 @@ __Z_INLINE parser_error_t parser_getDynamicItem(parser_context_t *ctx,
                                                 char *outKey, uint16_t outKeyLen,
                                                 char *outVal, uint16_t outValLen,
                                                 uint8_t pageIdx, uint8_t *pageCount) {
+
     // Variable items
     switch (parser_tx_obj.oasis.tx.method) {
         case stakingTransfer:
@@ -328,6 +329,7 @@ __Z_INLINE parser_error_t parser_getItemTx(parser_context_t *ctx,
                                            char *outKey, uint16_t outKeyLen,
                                            char *outVal, uint16_t outValLen,
                                            uint8_t pageIdx, uint8_t *pageCount) {
+
     if (displayIdx == 0) {
         snprintf(outKey, outKeyLen, "Type");
         return parser_getType(ctx, outVal, outValLen);

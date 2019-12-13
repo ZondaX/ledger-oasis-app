@@ -531,7 +531,7 @@ uint8_t _getNumItems(parser_context_t *c, parser_tx_t *v) {
     uint8_t itemCount = 3;
 
     // Entity (not a tx)
-    if (v->type == txType) {
+    if (v->type == entityType) {
         itemCount = 2 + v->oasis.entity.nodes_length;
         return itemCount;
     }
