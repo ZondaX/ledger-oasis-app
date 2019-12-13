@@ -1,3 +1,4 @@
+
 # Oasis App - Ledger Nano S
 ## General structure
 
@@ -106,9 +107,9 @@ First three items in the derivation path will be hardened automatically hardened
 | P2    | byte (1) | ----                   | not used  |
 | L     | byte (1) | Bytes in payload       | (depends) |
 
-The first packet/chunk includes only the derivation path
+The first packet/chunk includes: derivation path
 
-All other packets/chunks should contain message to sign
+All other packets/chunks contain data chunks as described below
 
 *First Packet*
 
@@ -119,14 +120,20 @@ All other packets/chunks should contain message to sign
 | Path[2]    | byte (4) | Derivation Path Data   | ?         |
 | Path[3]    | byte (4) | Derivation Path Data   | ?         |
 | Path[4]    | byte (4) | Derivation Path Data   | ?         |
-| CtxLen     | byte     | Context Length         | 0.63      |
-| Ctx        | ? bytes  | Context String         | ?         |
 
 *Other Chunks/Packets*
 
 | Field   | Type     | Content         | Expected |
 | ------- | -------- | --------------- | -------- |
-| Message | bytes... | Message to Sign |          |
+| Data    | bytes... | Context+Message |          |
+
+Data is defined as:
+
+| Field   | Type     | Content         | Expected |
+| ------- | -------- | --------------- | -------- |
+| CtxLen  | byte     | Context Length  |          |
+| Context | bytes..  | Context         | CtxLen bytes|
+| Message | bytes..  | CBOR data to sign   |      |
 
 #### Response
 
