@@ -56,7 +56,6 @@ typedef struct {
 
 typedef uint8_t raw_signature_t[64];
 
-
 typedef struct {
     publickey_t public_key;
     raw_signature_t raw_signature;

@@ -306,6 +306,7 @@ __Z_INLINE parser_error_t parser_getDynamicItem(const parser_context_t *ctx,
                     return parser_printSignature(
                             &parser_tx_obj.oasis.tx.body.registryRegisterEntity.signature.raw_signature,
                             outVal, outValLen, pageIdx, pageCount);
+
             }
         }
         case unknownMethod:
