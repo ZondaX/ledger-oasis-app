@@ -130,13 +130,9 @@ include $(BOLOS_SDK)/Makefile.glyphs
 APP_SOURCE_PATH += src deps/ledger-zxlib/include deps/ledger-zxlib/src
 SDK_SOURCE_PATH += lib_stusb lib_u2f lib_stusb_impl
 
-ifeq ($(TARGET_NAME),TARGET_NANOX)
+# TODO: we need a fix in NanoX SDK for this to work because the X SDK is not +=
 INCLUDES_PATH += deps/tinycbor/src
-SOURCE_FILES += deps/tinycbor/src/cborparser.c
-else
-INCLUDES_PATH += deps/tinycbor/src
-SOURCE_FILES += deps/tinycbor/src/cborparser.c
-endif
+SOURCE_FILES += deps/tinycbor/src/cborparser.c deps/tinycbor/src/cborvalidation.c
 
 #SDK_SOURCE_PATH  += lib_blewbxx lib_blewbxx_impl
 SDK_SOURCE_PATH  += lib_ux
