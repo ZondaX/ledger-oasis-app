@@ -30,15 +30,21 @@ parser_error_t parser_init(parser_context_t *ctx,
 
 parser_error_t _read(parser_context_t *c, parser_tx_t *v);
 
-parser_error_t _validateTx(parser_context_t *c, parser_tx_t *v);
+parser_error_t _validateTx(const parser_context_t *c, const parser_tx_t *v);
 
-uint8_t _getNumItems(parser_context_t *c, parser_tx_t *v);
+uint8_t _getNumItems(const parser_context_t *c, const parser_tx_t *v);
 
-parser_error_t _getCommissionRateStepAtIndex(parser_context_t *c, parser_tx_t *v, uint8_t index);
+parser_error_t _getCommissionRateStepAtIndex(const parser_context_t *c,
+                                             commissionRateStep_t *rate,
+                                             uint8_t index);
 
-parser_error_t _getCommissionBoundStepAtIndex(parser_context_t *c, parser_tx_t *v, uint8_t index);
+parser_error_t _getCommissionBoundStepAtIndex(const parser_context_t *c,
+                                              commissionRateBoundStep_t *bound,
+                                              uint8_t index);
 
-parser_error_t _getNodesIdAtIndex(parser_context_t *c, parser_tx_t *v, uint8_t index);
+parser_error_t _getNodesIdAtIndex(const parser_context_t *c,
+                                  publickey_t *node,
+                                  uint8_t index);
 
 #ifdef __cplusplus
 }

@@ -22,6 +22,8 @@ extern "C" {
 #include <stdint.h>
 #include <stddef.h>
 
+#define CHECK_PARSER_ERR(err) {if (err!=parser_ok) return err;}
+
 typedef enum {
     // Generic errors
     parser_ok = 0,

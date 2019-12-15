@@ -27,7 +27,6 @@
 #include "lib/crypto.h"
 #include "coin.h"
 #include "zxmacros.h"
-#include "context.h"
 
 unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
 
@@ -111,23 +110,6 @@ void extractBip44(uint32_t rx, uint32_t offset) {
     }
 }
 
-void extractContext(uint32_t rx, uint32_t offset) {
-    if ((rx - offset) < sizeof(uint8_t)) {
-        THROW(APDU_CODE_WRONG_LENGTH);
-    }
-
-    const uint8_t context_length = G_io_apdu_buffer[offset];
-    if ((rx - offset) < 1 + context_length) {
-        THROW(APDU_CODE_WRONG_LENGTH);
-    }
-
-    const uint8_t *context = G_io_apdu_buffer + offset + 1;
-    parser_error_t err = crypto_set_context(context, context_length);
-    if (err != parser_ok) {
-        THROW(APDU_CODE_DATA_INVALID);
-    }
-}
-
 bool process_chunk(volatile uint32_t *tx, uint32_t rx) {
     const uint8_t payloadType = G_io_apdu_buffer[OFFSET_PAYLOAD_TYPE];
 
@@ -145,7 +127,6 @@ bool process_chunk(volatile uint32_t *tx, uint32_t rx) {
             tx_initialize();
             tx_reset();
             extractBip44(rx, OFFSET_DATA);
-            extractContext(rx, OFFSET_CONTEXT);
             return false;
         case 1:
             added = tx_append(&(G_io_apdu_buffer[OFFSET_DATA]), rx - OFFSET_DATA);

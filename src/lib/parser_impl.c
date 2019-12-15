@@ -98,8 +98,11 @@ const char *parser_getErrorDescription(parser_error_t err) {
     }
 }
 
+#define INIT_CBOR_PARSER(c, it)  \
+    CborParser parser;           \
+    CHECK_CBOR_ERR(cbor_parser_init(c->buffer + c->offset, c->bufferLen - c->offset, 0, &parser, &it))
+
 #define CHECK_CBOR_ERR(err) {if (err!=CborNoError) return parser_cbor_unexpected;}
-#define CHECK_PARSER_ERR(err) {if (err!=parser_ok) return err;}
 #define CHECK_CBOR_TYPE(type, expected) {if (type!=expected) return parser_unexpected_type;}
 
 #define CHECK_CBOR_MAP_LEN(map, expected_count) { \
@@ -398,6 +401,17 @@ __Z_INLINE parser_error_t _readMethod(parser_tx_t *v, CborValue *value) {
     return parser_ok;
 }
 
+__Z_INLINE parser_error_t _readContext(parser_context_t *c, parser_tx_t *v) {
+    v->context.len = *(c->buffer + c->offset);
+    if (c->offset + v->context.len > c->bufferLen) {
+        return parser_context_unexpected_size;
+    }
+
+    v->context.ptr = (c->buffer + 1);
+    c->offset += 1 + v->context.len;
+    return parser_ok;
+}
+
 __Z_INLINE parser_error_t _readTx(parser_tx_t *v, CborValue *it) {
 
     MEMZERO(&v->oasis.tx, sizeof(oasis_tx_t));
@@ -479,9 +493,13 @@ __Z_INLINE parser_error_t _readEntity(parser_tx_t *v, CborValue *value) {
 }
 
 parser_error_t _read(parser_context_t *c, parser_tx_t *v) {
+    CHECK_PARSER_ERR(_readContext(c, v))
+
     CborValue it;
-    CborParser parser;
-    CHECK_CBOR_ERR(cbor_parser_init(c->buffer, c->bufferLen, c->offset, &parser, &it))
+    INIT_CBOR_PARSER(c, it);
+
+    // validate CBOR canonical order before even trying to parse
+    CHECK_CBOR_ERR(cbor_value_validate(&it, CborValidateCanonicalFormat))
 
     if (cbor_value_at_end(&it)) {
         return parser_unexpected_buffer_end;
@@ -518,19 +536,14 @@ parser_error_t _read(parser_context_t *c, parser_tx_t *v) {
     return parser_ok;
 }
 
-parser_error_t _validateTx(parser_context_t *c, parser_tx_t *v) {
-    // TODO: Add any additional sensible validation here
+parser_error_t _validateTx(const parser_context_t *c, const parser_tx_t *v) {
     CborValue it;
-    CborParser parser;
-    CHECK_CBOR_ERR(cbor_parser_init(c->buffer, c->bufferLen, c->offset, &parser, &it))
-
-    // validate CBOR canonical order
-    CHECK_CBOR_ERR(cbor_value_validate(&it, CborValidateCanonicalFormat))
+    INIT_CBOR_PARSER(c, it);
 
     return parser_ok;
 }
 
-uint8_t _getNumItems(parser_context_t *c, parser_tx_t *v) {
+uint8_t _getNumItems(const parser_context_t *c, const parser_tx_t *v) {
     // typical tx: Type, Fee, Gas, + Body
     uint8_t itemCount = 3;
 
@@ -636,10 +649,9 @@ __Z_INLINE parser_error_t _getBoundsContainer(CborValue *value, CborValue *bound
     return parser_ok;
 }
 
-parser_error_t _getCommissionRateStepAtIndex(parser_context_t *c, parser_tx_t *v, uint8_t index) {
+parser_error_t _getCommissionRateStepAtIndex(const parser_context_t *c, commissionRateStep_t *rate, uint8_t index) {
     CborValue it;
-    CborParser parser;
-    CHECK_CBOR_ERR(cbor_parser_init(c->buffer, c->bufferLen, c->offset, &parser, &it))
+    INIT_CBOR_PARSER(c, it);
 
     // We should have already initiated v but should we verify ?
 
@@ -650,16 +662,17 @@ parser_error_t _getCommissionRateStepAtIndex(parser_context_t *c, parser_tx_t *v
         CHECK_CBOR_ERR(cbor_value_advance(&ratesContainer))
     }
 
-    CHECK_CBOR_ERR(_readRate(&ratesContainer, &v->oasis.tx.body.stakingAmendCommissionSchedule.rate))
+    CHECK_CBOR_ERR(_readRate(&ratesContainer, rate))
 
     return parser_ok;
 
 }
 
-parser_error_t _getCommissionBoundStepAtIndex(parser_context_t *c, parser_tx_t *v, uint8_t index) {
+parser_error_t _getCommissionBoundStepAtIndex(const parser_context_t *c,
+                                              commissionRateBoundStep_t *bound,
+                                              uint8_t index) {
     CborValue it;
-    CborParser parser;
-    CHECK_CBOR_ERR(cbor_parser_init(c->buffer, c->bufferLen, c->offset, &parser, &it))
+    INIT_CBOR_PARSER(c, it);
 
     if (cbor_value_at_end(&it)) {
         return parser_unexpected_buffer_end;
@@ -672,16 +685,15 @@ parser_error_t _getCommissionBoundStepAtIndex(parser_context_t *c, parser_tx_t *
         CHECK_CBOR_ERR(cbor_value_advance(&boundsContainer))
     }
 
-    CHECK_CBOR_ERR(_readBound(&boundsContainer, &v->oasis.tx.body.stakingAmendCommissionSchedule.bound))
+    CHECK_CBOR_ERR(_readBound(&boundsContainer, bound))
 
     return parser_ok;
 
 }
 
-parser_error_t _getNodesIdAtIndex(parser_context_t *c, parser_tx_t *v, uint8_t index) {
+parser_error_t _getNodesIdAtIndex(const parser_context_t *c, publickey_t *node, uint8_t index) {
     CborValue it;
-    CborParser parser;
-    CHECK_CBOR_ERR(cbor_parser_init(c->buffer, c->bufferLen, c->offset, &parser, &it))
+    INIT_CBOR_PARSER(c, it);
 
     if (cbor_value_at_end(&it)) {
         return parser_unexpected_buffer_end;
@@ -702,7 +714,7 @@ parser_error_t _getNodesIdAtIndex(parser_context_t *c, parser_tx_t *v, uint8_t i
         CHECK_CBOR_ERR(cbor_value_advance(&nodesContainer))
     }
 
-    CHECK_CBOR_ERR(_readPublicKey(&nodesContainer, &v->oasis.entity.node))
+    CHECK_CBOR_ERR(_readPublicKey(&nodesContainer, node))
 
     return parser_ok;
 }
