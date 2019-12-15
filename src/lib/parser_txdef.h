@@ -123,7 +123,6 @@ typedef struct {
     } oasis;
 
     oasis_blob_type_e type;
-    CborParser parser;
 } parser_tx_t;
 
 #ifdef __cplusplus
