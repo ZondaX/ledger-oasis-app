@@ -177,10 +177,12 @@ __Z_INLINE parser_error_t _readSignature(CborValue *value, signature_t *out) {
     CHECK_CBOR_ERR(cbor_value_enter_container(value, &contents));
 
     CHECK_CBOR_MATCH_KEY(&contents, "signature");
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
     CHECK_CBOR_ERR(_readRawSignature(&contents, &out->raw_signature));
     CHECK_CBOR_ERR(cbor_value_advance(&contents));
 
     CHECK_CBOR_MATCH_KEY(&contents, "public_key");
+    CHECK_CBOR_ERR(cbor_value_advance(&contents));
     CHECK_CBOR_ERR(_readPublicKey(&contents, &out->public_key));
     CHECK_CBOR_ERR(cbor_value_advance(&contents));
 
