@@ -75,6 +75,14 @@ typedef struct {
 } commissionRateBoundStep_t;
 
 typedef struct {
+    publickey_t id;
+    // We are going to read dynamically like for stakingAmendCommissionSchedule
+    publickey_t node;
+    size_t nodes_length;
+    bool allow_entity_signed_nodes;
+} oasis_entity_t;
+
+typedef struct {
     uint64_t fee_gas;
     quantity_t fee_amount;
     bool has_fee;
@@ -110,6 +118,7 @@ typedef struct {
         } registryUnfreezeNode;
 
         struct {
+            oasis_entity_t entity;
             signature_t signature;
         } registryRegisterEntity;
 
@@ -118,14 +127,6 @@ typedef struct {
     uint64_t nonce;
     oasis_methods_e method;
 } oasis_tx_t;
-
-typedef struct {
-    publickey_t id;
-    // We are going to read dynamically like for stakingAmendCommissionSchedule
-    publickey_t node;
-    size_t nodes_length;
-    bool allow_entity_signed_nodes;
-} oasis_entity_t;
 
 typedef enum {
     unknownType,
