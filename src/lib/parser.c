@@ -53,7 +53,11 @@ parser_error_t parser_validate(const parser_context_t *ctx) {
 }
 
 uint8_t parser_getNumItems(const parser_context_t *ctx) {
-    return _getNumItems(ctx, &parser_tx_obj);
+    uint8_t itemCount = _getNumItems(ctx, &parser_tx_obj);
+    if (parser_tx_obj.context.suffixLen > 0) {
+        itemCount++;
+    }
+    return itemCount;
 }
 
 __Z_INLINE parser_error_t parser_getType(const parser_context_t *ctx, char *outVal, uint16_t outValLen) {
@@ -367,6 +371,16 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
         return parser_no_data;
     }
 
+    if (parser_tx_obj.context.suffixLen > 0 && displayIdx + 1 == parser_getNumItems(ctx) /*last*/) {
+        // Display context
+        snprintf(outKey, outKeyLen, "Context");
+        snprintf(outVal, outValLen, "Context");
+//            pageString(outVal, outValLen,
+//                       (char *) crypto_get_context_suffix(parser_tx_obj.oasis.tx.method),
+//                       pageIdx, pageCount);
+        return parser_ok;
+    }
+
     switch (parser_tx_obj.type) {
         case txType:
             return parser_getItemTx(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
@@ -375,14 +389,4 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
         default:
             return parser_unexpected_type;
     }
-
-    // Display context?
-    // FIXME
-//    if (parser_tx_obj.context.enabled) {
-//        snprintf(outKey, outKeyLen, "Context");
-//        pageString(outVal, outValLen,
-//                   (char *) crypto_get_context_suffix(parser_tx_obj.oasis.tx.method),
-//                   pageIdx, pageCount);
-//        return parser_ok;
-//    }
 }

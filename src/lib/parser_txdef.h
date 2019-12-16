@@ -40,9 +40,10 @@ typedef enum {
 } oasis_methods_e;
 
 typedef struct {
-    bool enabled;
     const uint8_t *ptr;
     uint8_t len;
+    const uint8_t *suffixPtr;
+    uint8_t suffixLen;
 } context_t;
 
 typedef uint8_t publickey_t[32];

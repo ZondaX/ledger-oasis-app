@@ -19,6 +19,8 @@
 #include "parser_txdef.h"
 
 parser_tx_t parser_tx_obj;
+const char context_prefix_tx[] = "oasis-core/consensus: tx for chain ";
+const char context_prefix_entity[] = "oasis-core/consensus: tx for chain ";     // FIXME: correct this expected context
 
 parser_error_t parser_init_context(parser_context_t *ctx,
                                    const uint8_t *buffer,
@@ -402,13 +404,17 @@ __Z_INLINE parser_error_t _readMethod(parser_tx_t *v, CborValue *value) {
 }
 
 __Z_INLINE parser_error_t _readContext(parser_context_t *c, parser_tx_t *v) {
+    v->context.suffixPtr = NULL;
+    v->context.suffixLen = 0;
     v->context.len = *(c->buffer + c->offset);
+
     if (c->offset + v->context.len > c->bufferLen) {
         return parser_context_unexpected_size;
     }
 
     v->context.ptr = (c->buffer + 1);
     c->offset += 1 + v->context.len;
+
     return parser_ok;
 }
 
@@ -492,6 +498,49 @@ __Z_INLINE parser_error_t _readEntity(parser_tx_t *v, CborValue *value) {
     return parser_ok;
 }
 
+const char *_context_expected_prefix(const parser_tx_t *v) {
+    switch(v->type) {
+        case txType:
+            return context_prefix_tx;
+        case entityType:
+            return context_prefix_entity;
+        default:
+            return NULL;
+    }
+}
+
+parser_error_t _extractContextSuffix(parser_tx_t *v) {
+    v->context.suffixPtr = NULL;
+    v->context.suffixLen = 0;
+
+    // Check all bytes in context as ASCII within 32..127
+    for (uint8_t i = 0; i < v->context.len; i++) {
+        uint8_t c = *(v->context.ptr+i);
+        if (c < 32 || c > 127) {
+            return parser_context_invalid_chars;
+        }
+    }
+
+    const char *expectedPrefix = _context_expected_prefix(v);
+    if (expectedPrefix == NULL)
+        return parser_context_unknown_prefix;
+
+    // confirm that the context starts with the correct prefix
+    if (v->context.len < strlen(expectedPrefix)) {
+        return parser_context_mismatch;
+    }
+    if (strncmp(expectedPrefix, (char *) v->context.ptr, strlen(expectedPrefix)) != 0) {
+        return parser_context_mismatch;
+    }
+
+    if (v->context.len > strlen(expectedPrefix)) {
+        v->context.suffixPtr = v->context.ptr + strlen(expectedPrefix);
+        v->context.suffixLen = v->context.len - strlen(expectedPrefix);
+    }
+
+    return parser_ok;
+}
+
 parser_error_t _read(parser_context_t *c, parser_tx_t *v) {
     CHECK_PARSER_ERR(_readContext(c, v))
 
@@ -532,6 +581,9 @@ parser_error_t _read(parser_context_t *c, parser_tx_t *v) {
         // End of buffer does not match end of parsed data
         return parser_unexpected_data_at_end;
     }
+
+    // Check prefix and enable/disable context
+    CHECK_PARSER_ERR(_extractContextSuffix(v));
 
     return parser_ok;
 }
