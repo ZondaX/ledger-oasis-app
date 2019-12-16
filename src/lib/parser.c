@@ -172,10 +172,10 @@ __Z_INLINE parser_error_t parser_printSignature(raw_signature_t *s,
                                                 uint8_t pageIdx, uint8_t *pageCount) {
 
     // 64 * 2 + 1 (one more for the zero termination)
-    char outBuffer[129];
+    char outBuffer[2 * sizeof(raw_signature_t) + 1];
     MEMZERO(outBuffer, sizeof(outBuffer));
 
-    array_to_hexstr(outBuffer, (const uint8_t *) s, 64);
+    array_to_hexstr(outBuffer, (const uint8_t *) s, sizeof(raw_signature_t));
     pageString(outVal, outValLen, outBuffer, pageIdx, pageCount);
     return parser_ok;
 }
@@ -298,12 +298,14 @@ __Z_INLINE parser_error_t parser_getDynamicItem(const parser_context_t *ctx,
             switch (displayDynamicIdx) {
                 case 0:
                     snprintf(outKey, outKeyLen, "Public key");
-                    return parser_printPublicKey(&parser_tx_obj.oasis.tx.body.registryRegisterEntity.signature.public_key,
-                                          outVal, outValLen, pageIdx, pageCount);
+                    return parser_printPublicKey(
+                            &parser_tx_obj.oasis.tx.body.registryRegisterEntity.signature.public_key,
+                            outVal, outValLen, pageIdx, pageCount);
                 case 1:
                     snprintf(outKey, outKeyLen, "Signature");
-                    return parser_printSignature(&parser_tx_obj.oasis.tx.body.registryRegisterEntity.signature.raw_signature,
-                                         outVal, outValLen, pageIdx, pageCount);
+                    return parser_printSignature(
+                            &parser_tx_obj.oasis.tx.body.registryRegisterEntity.signature.raw_signature,
+                            outVal, outValLen, pageIdx, pageCount);
             }
         }
         case unknownMethod:
