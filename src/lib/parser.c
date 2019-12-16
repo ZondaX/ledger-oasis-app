@@ -374,10 +374,9 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
     if (parser_tx_obj.context.suffixLen > 0 && displayIdx + 1 == parser_getNumItems(ctx) /*last*/) {
         // Display context
         snprintf(outKey, outKeyLen, "Context");
-        snprintf(outVal, outValLen, "Context");
-//            pageString(outVal, outValLen,
-//                       (char *) crypto_get_context_suffix(parser_tx_obj.oasis.tx.method),
-//                       pageIdx, pageCount);
+        pageStringExt(outVal, outValLen,
+                      (const char *) parser_tx_obj.context.suffixPtr, parser_tx_obj.context.suffixLen,
+                      pageIdx, pageCount);
         return parser_ok;
     }
 
