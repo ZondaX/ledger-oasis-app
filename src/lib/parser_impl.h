@@ -42,9 +42,7 @@ parser_error_t _getCommissionBoundStepAtIndex(const parser_context_t *c,
                                               commissionRateBoundStep_t *bound,
                                               uint8_t index);
 
-parser_error_t _getNodesIdAtIndex(const parser_context_t *c,
-                                  publickey_t *node,
-                                  uint8_t index);
+parser_error_t _getNodesIdAtIndex(const parser_context_t *c, parser_tx_t *v, oasis_entity_t *entity, uint8_t index);
 
 #ifdef __cplusplus
 }

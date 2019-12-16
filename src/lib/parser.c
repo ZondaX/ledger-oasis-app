@@ -180,6 +180,44 @@ __Z_INLINE parser_error_t parser_printSignature(raw_signature_t *s,
     return parser_ok;
 }
 
+__Z_INLINE parser_error_t parser_getItemEntity(parser_context_t *ctx,
+                                               int8_t displayIdx,
+                                               char *outKey, uint16_t outKeyLen,
+                                               char *outVal, uint16_t outValLen,
+                                               uint8_t pageIdx, uint8_t *pageCount,
+                                               oasis_entity_t *entity) {
+
+    if (displayIdx == 0) {
+        snprintf(outKey, outKeyLen, "ID");
+        return parser_printPublicKey(&entity->id,
+                                     outVal, outValLen, pageIdx, pageCount);
+    }
+
+    if (displayIdx <= (int) entity->nodes_length) {
+        const int8_t index = displayIdx -1;
+
+        snprintf(outKey, outKeyLen, "Node [%i]", index);
+
+        parser_error_t err = _getNodesIdAtIndex(ctx, &parser_tx_obj, entity, index);
+        if (err != parser_ok)
+            return err;
+
+        return parser_printPublicKey(&entity->node,
+                                     outVal, outValLen, pageIdx, pageCount);
+    }
+
+    if (displayIdx - entity->nodes_length == 1) {
+        if (entity->allow_entity_signed_nodes) {
+            snprintf(outKey, outKeyLen, "Allowed");
+        } else {
+            snprintf(outKey, outKeyLen, "Not Allowed");
+        }
+        return parser_ok;
+    }
+
+    return parser_no_data;
+}
+
 __Z_INLINE parser_error_t parser_getDynamicItem(const parser_context_t *ctx,
                                                 int8_t displayDynamicIdx,
                                                 char *outKey, uint16_t outKeyLen,
@@ -307,6 +345,9 @@ __Z_INLINE parser_error_t parser_getDynamicItem(const parser_context_t *ctx,
                             &parser_tx_obj.oasis.tx.body.registryRegisterEntity.signature.raw_signature,
                             outVal, outValLen, pageIdx, pageCount);
 
+                default:
+                    // REVIEW : maybe rename to parser_printEntity
+                    return parser_getItemEntity(ctx, displayDynamicIdx-2, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount, &parser_tx_obj.oasis.entity);
             }
         }
         case unknownMethod:
@@ -349,42 +390,6 @@ __Z_INLINE parser_error_t parser_getItemTx(const parser_context_t *ctx,
     return parser_getDynamicItem(ctx, displayDynIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
 }
 
-__Z_INLINE parser_error_t parser_getItemEntity(const parser_context_t *ctx,
-                                               int8_t displayIdx,
-                                               char *outKey, uint16_t outKeyLen,
-                                               char *outVal, uint16_t outValLen,
-                                               uint8_t pageIdx, uint8_t *pageCount) {
-
-    if (displayIdx == 0) {
-        snprintf(outKey, outKeyLen, "ID");
-        return parser_printPublicKey(&parser_tx_obj.oasis.entity.id,
-                                     outVal, outValLen, pageIdx, pageCount);
-    }
-
-    if (displayIdx <= (int) parser_tx_obj.oasis.entity.nodes_length) {
-        const int8_t index = displayIdx - 1;
-
-        snprintf(outKey, outKeyLen, "Node [%i]", index);
-
-        publickey_t node;
-        CHECK_PARSER_ERR(_getNodesIdAtIndex(ctx, &node, index))
-
-        return parser_printPublicKey(&parser_tx_obj.oasis.entity.node,
-                                     outVal, outValLen, pageIdx, pageCount);
-    }
-
-    if (displayIdx - parser_tx_obj.oasis.entity.nodes_length == 1) {
-        if (parser_tx_obj.oasis.entity.allow_entity_signed_nodes) {
-            snprintf(outKey, outKeyLen, "Allowed");
-        } else {
-            snprintf(outKey, outKeyLen, "Not Allowed");
-        }
-        return parser_ok;
-    }
-
-    return parser_no_data;
-}
-
 parser_error_t parser_getItem(const parser_context_t *ctx,
                               int8_t displayIdx,
                               char *outKey, uint16_t outKeyLen,
@@ -412,7 +417,7 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
         case txType:
             return parser_getItemTx(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
         case entityType:
-            return parser_getItemEntity(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+            return parser_getItemEntity(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount, &parser_tx_obj.oasis.entity);
         default:
             return parser_unexpected_type;
     }

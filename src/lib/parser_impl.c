@@ -455,6 +455,8 @@ __Z_INLINE parser_error_t _readBody(parser_tx_t *v, CborValue *value) {
             if (!cbor_value_is_byte_string(&contents))
                 return parser_unexpected_type;
 
+
+            // We create new Cbor parser with the byte string
             size_t buffer_size;
             CHECK_CBOR_ERR(cbor_value_calculate_string_length(&contents, &buffer_size));
 
@@ -467,8 +469,6 @@ __Z_INLINE parser_error_t _readBody(parser_tx_t *v, CborValue *value) {
 
             // Now we can read entity
             CHECK_CBOR_ERR(_readEntity(&v->oasis.tx.body.registryRegisterEntity.entity, &dummy));
-
-
 
             CHECK_CBOR_ERR(cbor_value_advance(&contents));
 
@@ -719,8 +719,8 @@ uint8_t _getNumItems(const parser_context_t *c, const parser_tx_t *v) {
             itemCount += 1;
             break;
         case registryRegisterEntity:
-            // REVIEW: only 2 because we ignore the raw_untrusted_value
-            itemCount += 2;
+            // 2 items for signature plus number of items for entity blob
+            itemCount += 2 + 2 + v->oasis.tx.body.registryRegisterEntity.entity.nodes_length;
             break;
         case unknownMethod:
         default:
@@ -832,9 +832,11 @@ parser_error_t _getCommissionBoundStepAtIndex(const parser_context_t *c,
 
 }
 
-parser_error_t _getNodesIdAtIndex(const parser_context_t *c, publickey_t *node, uint8_t index) {
+parser_error_t _getNodesIdAtIndex(const parser_context_t *c, parser_tx_t *v, oasis_entity_t *entity, uint8_t index) {
     CborValue it;
     INIT_CBOR_PARSER(c, it);
+
+    CborValue nodesContainer;
 
     if (cbor_value_at_end(&it)) {
         return parser_unexpected_buffer_end;
@@ -844,8 +846,34 @@ parser_error_t _getNodesIdAtIndex(const parser_context_t *c, publickey_t *node, 
         return parser_unexpected_type;
     }
 
-    CborValue nodesContainer;
-    CHECK_CBOR_ERR(cbor_value_map_find_value(&it, "nodes", &nodesContainer))
+    if (v->type == txType) {
+        // Find body
+        CborValue bodyContainer;
+        CHECK_CBOR_ERR(cbor_value_map_find_value(&it, "body", &bodyContainer));
+
+        if (!cbor_value_is_valid(&bodyContainer))
+            return parser_unexpected_type;
+
+        CborValue rawBlobContainer;
+        CHECK_CBOR_ERR(cbor_value_map_find_value(&bodyContainer, "untrusted_raw_value", &rawBlobContainer));
+
+        if (!cbor_value_is_byte_string(&rawBlobContainer))
+            return parser_unexpected_type;
+
+
+        // We create new Cbor parser with the byte string
+        size_t buffer_size;
+        CHECK_CBOR_ERR(cbor_value_calculate_string_length(&rawBlobContainer, &buffer_size));
+
+        uint8_t buffer[buffer_size];
+        CHECK_CBOR_ERR(cbor_value_copy_byte_string(&rawBlobContainer, buffer, &buffer_size, &it));
+
+        CborParser parser;
+        CHECK_CBOR_ERR(cbor_parser_init(buffer, buffer_size, 0, &parser, &it));
+
+    }
+
+    CHECK_CBOR_ERR(cbor_value_map_find_value(&it, "nodes", &nodesContainer));
 
     if (!cbor_value_is_array(&nodesContainer)) {
         return parser_unexpected_type;
@@ -855,7 +883,7 @@ parser_error_t _getNodesIdAtIndex(const parser_context_t *c, publickey_t *node, 
         CHECK_CBOR_ERR(cbor_value_advance(&nodesContainer))
     }
 
-    CHECK_CBOR_ERR(_readPublicKey(&nodesContainer, node))
+    CHECK_CBOR_ERR(_readPublicKey(&nodesContainer, entity->node));
 
     return parser_ok;
 }
