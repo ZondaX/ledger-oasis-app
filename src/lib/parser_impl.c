@@ -61,10 +61,14 @@ const char *parser_getErrorDescription(parser_error_t err) {
             return "display_idx_out_of_range";
         case parser_display_page_out_of_range:
             return "display_page_out_of_range";
-
-            // Coin specific
+        // cbor
         case parser_cbor_unexpected:
             return "unexpected CBOR error";
+        case parser_cbor_not_canonical:
+            return "CBOR was not in canonical order";
+        case parser_cbor_unexpected_EOF:
+            return "Unexpected CBOR EOF";
+        // Coin specific
         case parser_unexpected_type:
             return "Unexpected data type";
         case parser_unexpected_method:
@@ -75,8 +79,6 @@ const char *parser_getErrorDescription(parser_error_t err) {
             return "Unexpected value";
         case parser_unexpected_number_items:
             return "Unexpected number of items";
-        case parser_cbor_unexpected_EOF:
-            return "Unexpected CBOR EOF";
         case parser_unexpected_characters:
             return "Unexpected characters";
         case parser_unexpected_field:
@@ -104,6 +106,8 @@ parser_error_t parser_mapCborError(CborError err) {
     switch (err) {
         case CborErrorUnexpectedEOF:
             return parser_cbor_unexpected_EOF;
+        case CborErrorMapNotSorted:
+            return parser_cbor_not_canonical;
         default:
             return parser_cbor_unexpected;
     }
