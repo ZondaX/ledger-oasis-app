@@ -1,0 +1,76 @@
+version: 2
+jobs:
+  build:
+    # Build the current subrepo using master HEAD repo dependencies
+    docker:
+      - image: zondax/ledger-docker-bolos:latest
+    environment:
+      - BOLOS_SDK=/home/test/mainproject/deps/nanos-secure-sdk
+      - BOLOS_ENV=/opt/bolos
+    steps:
+      - checkout
+      - run: git clone --recurse-submodules --depth 1 --single-branch --branch master https://github.com/ZondaX/ledger-oasis.git /home/test/mainproject
+      - run: cd /home/test/project && make
+
+  build_dev:
+    # Build the current subrepo using dev HEAD repo dependencies
+    docker:
+      - image: zondax/ledger-docker-bolos:latest
+    environment:
+      - BOLOS_SDK=/home/test/mainproject/deps/nanos-secure-sdk
+      - BOLOS_ENV=/opt/bolos
+    steps:
+      - checkout
+      - run: git clone --recurse-submodules --depth 1 --single-branch --branch dev https://github.com/ZondaX/ledger-oasis.git /home/test/mainproject
+      - run: cd /home/test/project && make
+
+  test_master:
+    # Build the current subrepo using master HEAD repo dependencies
+    docker:
+      - image: zondax/circleci:latest
+    environment:
+      - BOLOS_SDK=/home/test/mainproject/deps/nanos-secure-sdk
+      - BOLOS_ENV=/opt/bolos
+    steps:
+      - checkout
+      - run: git clone --recurse-submodules --depth 1 --single-branch --branch master https://github.com/ZondaX/ledger-oasis.git /home/test/mainproject
+      - run: rm -rf /home/test/mainproject/src/ledger
+      - run: mv /root/project /home/test/mainproject/src/ledger
+      - run:
+          command: cmake -DDISABLE_DOCKER_BUILDS=ON -DCMAKE_BUILD_TYPE=Debug . && make
+          working_directory: /home/test/mainproject
+      - run:
+          # Unfortunately need to disable leak sanitizer https://github.com/google/sanitizers/issues/916
+          # Still run all other ASAN components
+          command: GTEST_COLOR=1 ASAN_OPTIONS=detect_leaks=0 ctest -VV
+          working_directory: /home/test/mainproject
+
+  test_dev:
+    # Build the current subrepo using master HEAD repo dependencies
+    docker:
+      - image: zondax/circleci:latest
+    environment:
+      - BOLOS_SDK=/home/test/mainproject/deps/nanos-secure-sdk
+      - BOLOS_ENV=/opt/bolos
+    steps:
+      - checkout
+      - run: git clone --recurse-submodules --depth 1 --single-branch --branch dev https://github.com/ZondaX/ledger-oasis.git /home/test/mainproject
+      - run: rm -rf /home/test/mainproject/src/ledger
+      - run: mv /root/project /home/test/mainproject/src/ledger
+      - run:
+          command: cmake -DDISABLE_DOCKER_BUILDS=ON -DCMAKE_BUILD_TYPE=Debug . && make
+          working_directory: /home/test/mainproject
+      - run:
+          # Unfortunately need to disable leak sanitizer https://github.com/google/sanitizers/issues/916
+          # Still run all other ASAN components
+          command: GTEST_COLOR=1 ASAN_OPTIONS=detect_leaks=0 ctest -VV
+          working_directory: /home/test/mainproject
+
+workflows:
+  version: 2
+  build_all:
+    jobs:
+      - build
+      - build_dev
+      - test_master
+      - test_dev

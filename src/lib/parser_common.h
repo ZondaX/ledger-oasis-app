@@ -22,6 +22,8 @@ extern "C" {
 #include <stdint.h>
 #include <stddef.h>
 
+#define CHECK_PARSER_ERR(err) {if (err!=parser_ok) return err;}
+
 typedef enum {
     // Generic errors
     parser_ok = 0,
@@ -36,7 +38,7 @@ typedef enum {
     parser_unexpected_buffer_end,
     parser_unexpected_value,
     parser_unexpected_number_items,
-    parser_unexpected_data_at_end,
+    parser_cbor_unexpected_EOF,
     parser_unexpected_characters,
     parser_unexpected_field,
     parser_value_out_of_range,
@@ -45,6 +47,9 @@ typedef enum {
     parser_context_unexpected_size,
     parser_context_invalid_chars,
     parser_context_unknown_prefix,
+    // Required fields
+    parser_required_nonce,
+    parser_required_method,
 } parser_error_t;
 
 typedef struct {
