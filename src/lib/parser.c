@@ -175,7 +175,7 @@ __Z_INLINE parser_error_t parser_printSignature(raw_signature_t *s,
     char outBuffer[129];
     MEMZERO(outBuffer, sizeof(outBuffer));
 
-    array_to_hexstr(outBuffer, s, 64);
+    array_to_hexstr(outBuffer, (const uint8_t *) s, 64);
     pageString(outVal, outValLen, outBuffer, pageIdx, pageCount);
     return parser_ok;
 }
