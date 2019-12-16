@@ -75,8 +75,8 @@ const char *parser_getErrorDescription(parser_error_t err) {
             return "Unexpected value";
         case parser_unexpected_number_items:
             return "Unexpected number of items";
-        case parser_unexpected_data_at_end:
-            return "Unexpected data at end";
+        case parser_cbor_unexpected_EOF:
+            return "Unexpected CBOR EOF";
         case parser_unexpected_characters:
             return "Unexpected characters";
         case parser_unexpected_field:
@@ -103,7 +103,7 @@ const char *parser_getErrorDescription(parser_error_t err) {
 parser_error_t parser_mapCborError(CborError err) {
     switch (err) {
         case CborErrorUnexpectedEOF:
-            return parser_unexpected_data_at_end;
+            return parser_cbor_unexpected_EOF;
         default:
             return parser_cbor_unexpected;
     }
@@ -588,7 +588,7 @@ parser_error_t _read(parser_context_t *c, parser_tx_t *v) {
     // Could we do it.parser->end != it.ptr ?
     if (it.ptr != c->buffer + c->bufferLen) {
         // End of buffer does not match end of parsed data
-        return parser_unexpected_data_at_end;
+        return parser_cbor_unexpected_EOF;
     }
 
     // Check prefix and enable/disable context

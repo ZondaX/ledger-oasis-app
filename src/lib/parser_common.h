@@ -38,7 +38,7 @@ typedef enum {
     parser_unexpected_buffer_end,
     parser_unexpected_value,
     parser_unexpected_number_items,
-    parser_unexpected_data_at_end,
+    parser_cbor_unexpected_EOF,
     parser_unexpected_characters,
     parser_unexpected_field,
     parser_value_out_of_range,
