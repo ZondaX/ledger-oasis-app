@@ -39,7 +39,15 @@ typedef enum {
     registryUnfreezeNode
 } oasis_methods_e;
 
+typedef struct {
+    const uint8_t *ptr;
+    uint8_t len;
+    const uint8_t *suffixPtr;
+    uint8_t suffixLen;
+} context_t;
+
 typedef uint8_t publickey_t[32];
+
 typedef struct {
     uint8_t buffer[64];
     size_t len;
@@ -85,9 +93,7 @@ typedef struct {
         } stakingReclaimEscrow;
 
         struct {
-            commissionRateStep_t rate;
             size_t rates_length;
-            commissionRateBoundStep_t bound;
             size_t bounds_length;
         } stakingAmendCommissionSchedule;
 
@@ -116,6 +122,7 @@ typedef enum {
 } oasis_blob_type_e;
 
 typedef struct {
+    context_t context;
 
     union {
         oasis_tx_t tx;
@@ -123,7 +130,6 @@ typedef struct {
     } oasis;
 
     oasis_blob_type_e type;
-    CborParser parser;
 } parser_tx_t;
 
 #ifdef __cplusplus

@@ -22,7 +22,6 @@
 #include "view_internal.h"
 #include "parser.h"
 #include "parser_txdef.h"
-#include "context.h"
 #include "coin.h"
 
 #if defined(TARGET_NANOX)
@@ -32,17 +31,13 @@ void __assert_fail(const char * assertion, const char * file, unsigned int line,
 }
 #endif
 
-parser_error_t parser_parse(parser_context_t *ctx,
-                            const uint8_t *data,
-                            uint16_t dataLen) {
+parser_error_t parser_parse(parser_context_t *ctx, const uint8_t *data, uint16_t dataLen) {
     parser_init(ctx, data, dataLen);
     return _read(ctx, &parser_tx_obj);
 }
 
-parser_error_t parser_validate(parser_context_t *ctx) {
-    parser_error_t err = _validateTx(ctx, &parser_tx_obj);
-    if (err != parser_ok)
-        return err;
+parser_error_t parser_validate(const parser_context_t *ctx) {
+    CHECK_PARSER_ERR(_validateTx(ctx, &parser_tx_obj))
 
     uint8_t numItems = parser_getNumItems(ctx);
 
@@ -51,33 +46,21 @@ parser_error_t parser_validate(parser_context_t *ctx) {
 
     for (uint8_t idx = 0; idx < numItems; idx++) {
         uint8_t pageCount;
-        err = parser_getItem(ctx, idx, tmpKey, sizeof(tmpKey), tmpVal, sizeof(tmpVal), 0, &pageCount);
-        if (err != parser_ok) {
-            return err;
-        }
+        CHECK_PARSER_ERR(parser_getItem(ctx, idx, tmpKey, sizeof(tmpKey), tmpVal, sizeof(tmpVal), 0, &pageCount))
     }
 
-    // Validate context matches tx type
-    err = crypto_validate_context(parser_tx_obj.oasis.tx.method);
-
-    return err;
+    return parser_ok;
 }
 
-bool parser_customContextEnabled() {
-    // FIXME: Do not show when suffix is empty
-    return crypto_get_context_length() > 0;
+uint8_t parser_getNumItems(const parser_context_t *ctx) {
+    uint8_t itemCount = _getNumItems(ctx, &parser_tx_obj);
+    if (parser_tx_obj.context.suffixLen > 0) {
+        itemCount++;
+    }
+    return itemCount;
 }
 
-uint8_t parser_getNumItems(parser_context_t *ctx) {
-    uint8_t txItems = _getNumItems(ctx, &parser_tx_obj);
-
-    if (parser_customContextEnabled())
-        txItems++;
-
-    return txItems;
-}
-
-__Z_INLINE parser_error_t parser_getType(parser_context_t *ctx, char *outVal, uint16_t outValLen) {
+__Z_INLINE parser_error_t parser_getType(const parser_context_t *ctx, char *outVal, uint16_t outValLen) {
     switch (parser_tx_obj.oasis.tx.method) {
         case stakingTransfer:
             snprintf(outVal, outValLen, "Transfer");
@@ -184,7 +167,7 @@ __Z_INLINE parser_error_t parser_printPublicKey(publickey_t *pk,
     return parser_ok;
 }
 
-__Z_INLINE parser_error_t parser_getDynamicItem(parser_context_t *ctx,
+__Z_INLINE parser_error_t parser_getDynamicItem(const parser_context_t *ctx,
                                                 int8_t displayDynamicIdx,
                                                 char *outKey, uint16_t outKeyLen,
                                                 char *outVal, uint16_t outValLen,
@@ -246,60 +229,43 @@ __Z_INLINE parser_error_t parser_getDynamicItem(parser_context_t *ctx,
         case stakingAmendCommissionSchedule:
             if (displayDynamicIdx / 2 < (int) parser_tx_obj.oasis.tx.body.stakingAmendCommissionSchedule.rates_length) {
                 const int8_t index = displayDynamicIdx / 2;
+                commissionRateStep_t rate;
 
-                // Need to do it once for each rate which is every 2 displayIdx
-                if (displayDynamicIdx % 2 == 0) {
-                    // Only keeping one amendment in body at the time
-                    parser_error_t err = _getCommissionRateStepAtIndex(ctx, &parser_tx_obj, index);
-                    if (err != parser_ok)
-                        return err;
-                }
+                CHECK_PARSER_ERR(_getCommissionRateStepAtIndex(ctx, &rate, index))
 
                 switch (displayDynamicIdx % 2) {
                     case 0: {
                         snprintf(outKey, outKeyLen, "Rates : [%i] start", index);
-                        uint64_to_str(outVal, outValLen,
-                                      parser_tx_obj.oasis.tx.body.stakingAmendCommissionSchedule.rate.start);
+                        uint64_to_str(outVal, outValLen, rate.start);
                         return parser_ok;
                     }
                     case 1: {
                         snprintf(outKey, outKeyLen, "Rates : [%i] rate", index);
-                        return parser_printRate(&parser_tx_obj.oasis.tx.body.stakingAmendCommissionSchedule.rate.rate,
-                                                outVal, outValLen, pageIdx, pageCount);
+                        return parser_printRate(&rate.rate, outVal, outValLen, pageIdx, pageCount);
                     }
                 }
             } else {
                 const int8_t index = (displayDynamicIdx -
                                       parser_tx_obj.oasis.tx.body.stakingAmendCommissionSchedule.rates_length * 2) / 3;
 
-                // Need to do it once for each bound which is every 3 displayIdx
-                if ((displayDynamicIdx - parser_tx_obj.oasis.tx.body.stakingAmendCommissionSchedule.rates_length * 2) %
-                    3 == 0) {
-                    // Only keeping one amendment in body at the time
-                    parser_error_t err = _getCommissionBoundStepAtIndex(ctx, &parser_tx_obj, index);
-                    if (err != parser_ok)
-                        return err;
-                }
+                // Only keeping one amendment in body at the time
+                commissionRateBoundStep_t bound;
+                CHECK_PARSER_ERR(_getCommissionBoundStepAtIndex(ctx, &bound, index))
 
                 switch ((displayDynamicIdx -
                          parser_tx_obj.oasis.tx.body.stakingAmendCommissionSchedule.rates_length * 2) % 3) {
                     case 0: {
                         snprintf(outKey, outKeyLen, "Bounds : [%i] start", index);
-                        uint64_to_str(outVal, outValLen,
-                                      parser_tx_obj.oasis.tx.body.stakingAmendCommissionSchedule.bound.start);
+                        uint64_to_str(outVal, outValLen, bound.start);
                         return parser_ok;
                     }
                     case 1: {
                         snprintf(outKey, outKeyLen, "Bounds : [%i] min", index);
-                        return parser_printRate(
-                                &parser_tx_obj.oasis.tx.body.stakingAmendCommissionSchedule.bound.rate_min,
-                                outVal, outValLen, pageIdx, pageCount);
+                        return parser_printRate(&bound.rate_min, outVal, outValLen, pageIdx, pageCount);
                     }
                     case 2: {
                         snprintf(outKey, outKeyLen, "Bounds : [%i] max", index);
-                        return parser_printRate(
-                                &parser_tx_obj.oasis.tx.body.stakingAmendCommissionSchedule.bound.rate_max,
-                                outVal, outValLen, pageIdx, pageCount);
+                        return parser_printRate(&bound.rate_max, outVal, outValLen, pageIdx, pageCount);
                     }
                 }
             }
@@ -324,7 +290,7 @@ __Z_INLINE parser_error_t parser_getDynamicItem(parser_context_t *ctx,
     return parser_no_data;
 }
 
-__Z_INLINE parser_error_t parser_getItemTx(parser_context_t *ctx,
+__Z_INLINE parser_error_t parser_getItemTx(const parser_context_t *ctx,
                                            int8_t displayIdx,
                                            char *outKey, uint16_t outKeyLen,
                                            char *outVal, uint16_t outValLen,
@@ -350,29 +316,16 @@ __Z_INLINE parser_error_t parser_getItemTx(parser_context_t *ctx,
     if (!parser_tx_obj.oasis.tx.has_fee)
         numberFixedItems = 1;
 
-    // Display context?
-    if (parser_customContextEnabled()) {
-        numberFixedItems++;
-
-        if (displayIdx == 3) {
-            snprintf(outKey, outKeyLen, "Context");
-            pageString(outVal, outValLen,
-                       (char *) crypto_get_context_suffix(parser_tx_obj.oasis.tx.method),
-                       pageIdx, pageCount);
-            return parser_ok;
-        }
-    }
-
     // Now display dynamic items
     const int8_t displayDynIdx = displayIdx - numberFixedItems;
     return parser_getDynamicItem(ctx, displayDynIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
 }
 
-__Z_INLINE parser_error_t parser_getItemEntity(parser_context_t *ctx,
-                                           int8_t displayIdx,
-                                           char *outKey, uint16_t outKeyLen,
-                                           char *outVal, uint16_t outValLen,
-                                           uint8_t pageIdx, uint8_t *pageCount) {
+__Z_INLINE parser_error_t parser_getItemEntity(const parser_context_t *ctx,
+                                               int8_t displayIdx,
+                                               char *outKey, uint16_t outKeyLen,
+                                               char *outVal, uint16_t outValLen,
+                                               uint8_t pageIdx, uint8_t *pageCount) {
 
     if (displayIdx == 0) {
         snprintf(outKey, outKeyLen, "ID");
@@ -381,13 +334,12 @@ __Z_INLINE parser_error_t parser_getItemEntity(parser_context_t *ctx,
     }
 
     if (displayIdx <= (int) parser_tx_obj.oasis.entity.nodes_length) {
-        const int8_t index = displayIdx -1;
+        const int8_t index = displayIdx - 1;
 
         snprintf(outKey, outKeyLen, "Node [%i]", index);
 
-        parser_error_t err = _getNodesIdAtIndex(ctx, &parser_tx_obj, index);
-        if (err != parser_ok)
-            return err;
+        publickey_t node;
+        CHECK_PARSER_ERR(_getNodesIdAtIndex(ctx, &node, index))
 
         return parser_printPublicKey(&parser_tx_obj.oasis.entity.node,
                                      outVal, outValLen, pageIdx, pageCount);
@@ -405,7 +357,7 @@ __Z_INLINE parser_error_t parser_getItemEntity(parser_context_t *ctx,
     return parser_no_data;
 }
 
-parser_error_t parser_getItem(parser_context_t *ctx,
+parser_error_t parser_getItem(const parser_context_t *ctx,
                               int8_t displayIdx,
                               char *outKey, uint16_t outKeyLen,
                               char *outVal, uint16_t outValLen,
@@ -417,6 +369,15 @@ parser_error_t parser_getItem(parser_context_t *ctx,
 
     if (displayIdx < 0 || displayIdx >= parser_getNumItems(ctx)) {
         return parser_no_data;
+    }
+
+    if (parser_tx_obj.context.suffixLen > 0 && displayIdx + 1 == parser_getNumItems(ctx) /*last*/) {
+        // Display context
+        snprintf(outKey, outKeyLen, "Context");
+        pageStringExt(outVal, outValLen,
+                      (const char *) parser_tx_obj.context.suffixPtr, parser_tx_obj.context.suffixLen,
+                      pageIdx, pageCount);
+        return parser_ok;
     }
 
     switch (parser_tx_obj.type) {
