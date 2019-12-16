@@ -100,11 +100,20 @@ const char *parser_getErrorDescription(parser_error_t err) {
     }
 }
 
+parser_error_t parser_mapCborError(CborError err) {
+    switch (err) {
+        case CborErrorUnexpectedEOF:
+            return parser_unexpected_data_at_end;
+        default:
+            return parser_cbor_unexpected;
+    }
+}
+
 #define INIT_CBOR_PARSER(c, it)  \
     CborParser parser;           \
     CHECK_CBOR_ERR(cbor_parser_init(c->buffer + c->offset, c->bufferLen - c->offset, 0, &parser, &it))
 
-#define CHECK_CBOR_ERR(err) {if (err!=CborNoError) return parser_cbor_unexpected;}
+#define CHECK_CBOR_ERR(err) {if (err!=CborNoError) return parser_mapCborError(err);}
 #define CHECK_CBOR_TYPE(type, expected) {if (type!=expected) return parser_unexpected_type;}
 
 #define CHECK_CBOR_MAP_LEN(map, expected_count) { \

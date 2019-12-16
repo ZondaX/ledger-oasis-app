@@ -32,7 +32,7 @@ void __assert_fail(const char * assertion, const char * file, unsigned int line,
 #endif
 
 parser_error_t parser_parse(parser_context_t *ctx, const uint8_t *data, uint16_t dataLen) {
-    parser_init(ctx, data, dataLen);
+    CHECK_PARSER_ERR(parser_init(ctx, data, dataLen));
     return _read(ctx, &parser_tx_obj);
 }
 
