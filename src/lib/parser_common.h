@@ -31,14 +31,16 @@ typedef enum {
     parser_init_context_empty,
     parser_display_idx_out_of_range,
     parser_display_page_out_of_range,
-    // Coin specific
+    // Cbor
     parser_cbor_unexpected,
+    parser_cbor_unexpected_EOF,
+    parser_cbor_not_canonical,
+    // Coin specific
     parser_unexpected_type,
     parser_unexpected_method,
     parser_unexpected_buffer_end,
     parser_unexpected_value,
     parser_unexpected_number_items,
-    parser_cbor_unexpected_EOF,
     parser_unexpected_characters,
     parser_unexpected_field,
     parser_value_out_of_range,

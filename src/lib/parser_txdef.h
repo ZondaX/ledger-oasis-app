@@ -36,7 +36,8 @@ typedef enum {
     stakingReclaimEscrow,
     stakingAmendCommissionSchedule,
     registryDeregisterEntity,
-    registryUnfreezeNode
+    registryUnfreezeNode,
+    registryRegisterEntity
 } oasis_methods_e;
 
 typedef struct {
@@ -52,6 +53,14 @@ typedef struct {
     uint8_t buffer[64];
     size_t len;
 } quantity_t;
+
+typedef uint8_t raw_signature_t[64];
+
+
+typedef struct {
+    publickey_t public_key;
+    raw_signature_t raw_signature;
+} signature_t;
 
 typedef uint64_t epochTime_t;
 
@@ -100,6 +109,10 @@ typedef struct {
         struct {
             publickey_t node_id;
         } registryUnfreezeNode;
+
+        struct {
+            signature_t signature;
+        } registryRegisterEntity;
 
     } body;
 
