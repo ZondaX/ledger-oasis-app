@@ -75,11 +75,18 @@ typedef struct {
 } commissionRateBoundStep_t;
 
 typedef struct {
+    CborParser parser;
+    CborValue startValue;
+} cbor_parser_state_t;
+
+typedef struct {
     publickey_t id;
     // We are going to read dynamically like for stakingAmendCommissionSchedule
-    publickey_t node;
     size_t nodes_length;
     bool allow_entity_signed_nodes;
+
+    // We keep parser and iterator
+    cbor_parser_state_t cborState;
 } oasis_entity_t;
 
 typedef struct {
