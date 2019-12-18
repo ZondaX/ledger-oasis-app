@@ -422,16 +422,15 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
                                     displayIdx,
                                     outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
         case entityType: {
-            // TODO: create a function for that (cleaner)
             if (displayIdx == 0) {
                 snprintf(outKey, outKeyLen, "Type");
                 snprintf(outVal, outValLen, "Entity signing");
                 return parser_ok;
-            } else {
-                return parser_getItemEntity(&parser_tx_obj.oasis.entity,
-                                            displayIdx - 1,
-                                            outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
             }
+
+            return parser_getItemEntity(&parser_tx_obj.oasis.entity,
+                                        displayIdx - 1,
+                                        outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
         }
 
         default:
