@@ -84,6 +84,9 @@ __Z_INLINE parser_error_t parser_getType(const parser_context_t *ctx, char *outV
         case registryUnfreezeNode:
             snprintf(outVal, outValLen, "Unfreeze Node");
             return parser_ok;
+        case registryRegisterEntity:
+            snprintf(outVal, outValLen, "Register Entity");
+            return parser_ok;
         case unknownMethod:
         default:
             break;
