@@ -21,7 +21,10 @@ extern "C" {
 #endif
 
 #include "string.h"
+#ifndef __APPLE__
 extern void explicit_bzero (void *__s, size_t __n) __THROW __nonnull ((1));
+#endif
+#define __Z_INLINE inline __attribute__((always_inline)) static
 
 #if defined(LEDGER_SPECIFIC)
 #include "bolos_target.h"
@@ -88,7 +91,14 @@ void __logstack();
 #define MEMSET memset
 #define MEMCPY memcpy
 #define MEMCPY_NV memcpy
+
+#ifndef __APPLE__
 #define MEMZERO explicit_bzero
+#else
+__Z_INLINE void __memzero(void *buffer, size_t s) { memset(buffer, 0, s); }
+#define MEMZERO __memzero
+#endif
+
 #define LOG(str)
 #define LOGSTACK()
 #endif
@@ -96,8 +106,6 @@ void __logstack();
 #include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
-
-#define __Z_INLINE inline __attribute__((always_inline)) static
 
 #define SET_NV(DST, TYPE, VAL) { \
     TYPE nvset_tmp=(VAL); \
