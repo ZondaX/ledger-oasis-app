@@ -692,7 +692,7 @@ uint8_t _getNumItems(const parser_context_t *c, const parser_tx_t *v) {
 
     // Entity (not a tx)
     if (v->type == entityType) {
-        itemCount = 2 + v->oasis.entity.nodes_length;
+        itemCount = 3 + v->oasis.entity.nodes_length;
         return itemCount;
     }
 
@@ -855,11 +855,14 @@ parser_error_t _getEntityNodesIdAtIndex(const oasis_entity_t *entity, publickey_
         return parser_unexpected_type;
     }
 
+    CborValue nodesArrayContainer;
+    CHECK_CBOR_ERR(cbor_value_enter_container(&nodesContainer, &nodesArrayContainer))
+
     for (int i = 0; i < index; i++) {
-        CHECK_CBOR_ERR(cbor_value_advance(&nodesContainer))
+        CHECK_CBOR_ERR(cbor_value_advance(&nodesArrayContainer))
     }
 
-    CHECK_CBOR_ERR(_readPublicKey(&nodesContainer, node))
+    CHECK_CBOR_ERR(_readPublicKey(&nodesArrayContainer, node))
 
     return parser_ok;
 }
