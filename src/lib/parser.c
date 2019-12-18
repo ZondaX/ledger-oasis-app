@@ -207,10 +207,11 @@ __Z_INLINE parser_error_t parser_getItemEntity(const oasis_entity_t *entity,
     }
 
     if (displayIdx - entity->nodes_length == 1) {
+        snprintf(outKey, outKeyLen, "Allowed");
         if (entity->allow_entity_signed_nodes) {
-            snprintf(outKey, outKeyLen, "Allowed");
+            snprintf(outVal, outValLen, "True");
         } else {
-            snprintf(outKey, outKeyLen, "Not Allowed");
+            snprintf(outVal, outValLen, "False");
         }
         return parser_ok;
     }
