@@ -421,6 +421,8 @@ CBOR_INLINE_API CborError cbor_value_get_string_length(const CborValue *value, s
     return CborNoError;
 }
 
+CborError get_string_chunk(CborValue *it, const void **bufferptr, size_t *len);
+
 CBOR_PRIVATE_API CborError _cbor_value_copy_string(const CborValue *value, void *buffer,
                                                    size_t *buflen, CborValue *next);
 CBOR_PRIVATE_API CborError _cbor_value_dup_string(const CborValue *value, void **buffer,

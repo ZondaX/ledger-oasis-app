@@ -1012,7 +1012,7 @@ CborError CBOR_INTERNAL_API_CC _cbor_value_prepare_string_iteration(CborValue *i
     return CborNoError;
 }
 
-static CborError get_string_chunk(CborValue *it, const void **bufferptr, size_t *len)
+CborError get_string_chunk(CborValue *it, const void **bufferptr, size_t *len)
 {
     CborError err;
 

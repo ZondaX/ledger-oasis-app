@@ -32,7 +32,8 @@ void __assert_fail(const char * assertion, const char * file, unsigned int line,
 #endif
 
 parser_error_t parser_parse(parser_context_t *ctx, const uint8_t *data, uint16_t dataLen) {
-    CHECK_PARSER_ERR(parser_init(ctx, data, dataLen));
+    CHECK_PARSER_ERR(parser_init(ctx, data, dataLen))
+    CHECK_PARSER_ERR(_readContext(ctx, &parser_tx_obj))
     return _read(ctx, &parser_tx_obj);
 }
 
@@ -83,6 +84,9 @@ __Z_INLINE parser_error_t parser_getType(const parser_context_t *ctx, char *outV
         case registryUnfreezeNode:
             snprintf(outVal, outValLen, "Unfreeze Node");
             return parser_ok;
+        case registryRegisterEntity:
+            snprintf(outVal, outValLen, "Register Entity");
+            return parser_ok;
         case unknownMethod:
         default:
             break;
@@ -92,7 +96,7 @@ __Z_INLINE parser_error_t parser_getType(const parser_context_t *ctx, char *outV
 
 #define LESS_THAN_64_DIGIT(num_digit) if (num_digit > 64) return parser_value_out_of_range;
 
-__Z_INLINE bool format_quantity(quantity_t *q,
+__Z_INLINE bool format_quantity(const quantity_t *q,
                                 uint8_t *bcd, uint16_t bcdSize,
                                 char *bignum, uint16_t bignumSize) {
 
@@ -100,14 +104,14 @@ __Z_INLINE bool format_quantity(quantity_t *q,
     return bignumBigEndian_bcdprint(bignum, bignumSize, bcd, bcdSize);
 }
 
-__Z_INLINE parser_error_t parser_printQuantity(quantity_t *q,
+__Z_INLINE parser_error_t parser_printQuantity(const quantity_t *q,
                                                char *outVal, uint16_t outValLen,
                                                uint8_t pageIdx, uint8_t *pageCount) {
     // upperbound 2**(64*8)
     // results in 155 decimal digits => max 78 bcd bytes
 
     // Too many digits, we cannot format this
-    LESS_THAN_64_DIGIT(q->len);
+    LESS_THAN_64_DIGIT(q->len)
 
     char bignum[160];
     union {
@@ -128,12 +132,12 @@ __Z_INLINE parser_error_t parser_printQuantity(quantity_t *q,
     return parser_ok;
 }
 
-__Z_INLINE parser_error_t parser_printRate(quantity_t *q,
+__Z_INLINE parser_error_t parser_printRate(const quantity_t *q,
                                            char *outVal, uint16_t outValLen,
                                            uint8_t pageIdx, uint8_t *pageCount) {
 
     // Too many digits, we cannot format this
-    LESS_THAN_64_DIGIT(q->len);
+    LESS_THAN_64_DIGIT(q->len)
 
     char bignum[160];
     union {
@@ -156,7 +160,7 @@ __Z_INLINE parser_error_t parser_printRate(quantity_t *q,
     return parser_ok;
 }
 
-__Z_INLINE parser_error_t parser_printPublicKey(publickey_t *pk,
+__Z_INLINE parser_error_t parser_printPublicKey(const publickey_t *pk,
                                                 char *outVal, uint16_t outValLen,
                                                 uint8_t pageIdx, uint8_t *pageCount) {
     char outBuffer[128];
@@ -178,6 +182,40 @@ __Z_INLINE parser_error_t parser_printSignature(raw_signature_t *s,
     array_to_hexstr(outBuffer, (const uint8_t *) s, sizeof(raw_signature_t));
     pageString(outVal, outValLen, outBuffer, pageIdx, pageCount);
     return parser_ok;
+}
+
+__Z_INLINE parser_error_t parser_getItemEntity(const oasis_entity_t *entity,
+                                               int8_t displayIdx,
+                                               char *outKey, uint16_t outKeyLen,
+                                               char *outVal, uint16_t outValLen,
+                                               uint8_t pageIdx, uint8_t *pageCount) {
+
+    if (displayIdx == 0) {
+        snprintf(outKey, outKeyLen, "ID");
+        return parser_printPublicKey(&entity->id,
+                                     outVal, outValLen, pageIdx, pageCount);
+    }
+
+    if (displayIdx <= (int) entity->nodes_length) {
+        const int8_t index = displayIdx - 1;
+
+        snprintf(outKey, outKeyLen, "Node [%i]", index);
+
+        publickey_t node;
+        CHECK_PARSER_ERR(_getEntityNodesIdAtIndex(entity, &node, index))
+        return parser_printPublicKey(&node, outVal, outValLen, pageIdx, pageCount);
+    }
+
+    if (displayIdx - entity->nodes_length == 1) {
+        if (entity->allow_entity_signed_nodes) {
+            snprintf(outKey, outKeyLen, "Allowed");
+        } else {
+            snprintf(outKey, outKeyLen, "Not Allowed");
+        }
+        return parser_ok;
+    }
+
+    return parser_no_data;
 }
 
 __Z_INLINE parser_error_t parser_getDynamicItem(const parser_context_t *ctx,
@@ -306,6 +344,13 @@ __Z_INLINE parser_error_t parser_getDynamicItem(const parser_context_t *ctx,
                     return parser_printSignature(
                             &parser_tx_obj.oasis.tx.body.registryRegisterEntity.signature.raw_signature,
                             outVal, outValLen, pageIdx, pageCount);
+
+                default:
+                    return parser_getItemEntity(
+                            &parser_tx_obj.oasis.tx.body.registryRegisterEntity.entity,
+                            displayDynamicIdx - 2,
+                            outKey, outKeyLen, outVal, outValLen,
+                            pageIdx, pageCount);
             }
         }
         case unknownMethod:
@@ -348,42 +393,6 @@ __Z_INLINE parser_error_t parser_getItemTx(const parser_context_t *ctx,
     return parser_getDynamicItem(ctx, displayDynIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
 }
 
-__Z_INLINE parser_error_t parser_getItemEntity(const parser_context_t *ctx,
-                                               int8_t displayIdx,
-                                               char *outKey, uint16_t outKeyLen,
-                                               char *outVal, uint16_t outValLen,
-                                               uint8_t pageIdx, uint8_t *pageCount) {
-
-    if (displayIdx == 0) {
-        snprintf(outKey, outKeyLen, "ID");
-        return parser_printPublicKey(&parser_tx_obj.oasis.entity.id,
-                                     outVal, outValLen, pageIdx, pageCount);
-    }
-
-    if (displayIdx <= (int) parser_tx_obj.oasis.entity.nodes_length) {
-        const int8_t index = displayIdx - 1;
-
-        snprintf(outKey, outKeyLen, "Node [%i]", index);
-
-        publickey_t node;
-        CHECK_PARSER_ERR(_getNodesIdAtIndex(ctx, &node, index))
-
-        return parser_printPublicKey(&parser_tx_obj.oasis.entity.node,
-                                     outVal, outValLen, pageIdx, pageCount);
-    }
-
-    if (displayIdx - parser_tx_obj.oasis.entity.nodes_length == 1) {
-        if (parser_tx_obj.oasis.entity.allow_entity_signed_nodes) {
-            snprintf(outKey, outKeyLen, "Allowed");
-        } else {
-            snprintf(outKey, outKeyLen, "Not Allowed");
-        }
-        return parser_ok;
-    }
-
-    return parser_no_data;
-}
-
 parser_error_t parser_getItem(const parser_context_t *ctx,
                               int8_t displayIdx,
                               char *outKey, uint16_t outKeyLen,
@@ -409,9 +418,21 @@ parser_error_t parser_getItem(const parser_context_t *ctx,
 
     switch (parser_tx_obj.type) {
         case txType:
-            return parser_getItemTx(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
-        case entityType:
-            return parser_getItemEntity(ctx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+            return parser_getItemTx(ctx,
+                                    displayIdx,
+                                    outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+        case entityType: {
+            if (displayIdx == 0) {
+                snprintf(outKey, outKeyLen, "Type");
+                snprintf(outVal, outValLen, "Entity signing");
+                return parser_ok;
+            }
+
+            return parser_getItemEntity(&parser_tx_obj.oasis.entity,
+                                        displayIdx - 1,
+                                        outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+        }
+
         default:
             return parser_unexpected_type;
     }

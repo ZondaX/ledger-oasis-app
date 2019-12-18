@@ -56,7 +56,6 @@ typedef struct {
 
 typedef uint8_t raw_signature_t[64];
 
-
 typedef struct {
     publickey_t public_key;
     raw_signature_t raw_signature;
@@ -74,6 +73,21 @@ typedef struct {
     quantity_t rate_max;
     quantity_t rate_min;
 } commissionRateBoundStep_t;
+
+typedef struct {
+    CborParser parser;
+    CborValue startValue;
+} cbor_parser_state_t;
+
+typedef struct {
+    publickey_t id;
+    // We are going to read dynamically like for stakingAmendCommissionSchedule
+    size_t nodes_length;
+    bool allow_entity_signed_nodes;
+
+    // We keep parser and iterator
+    cbor_parser_state_t cborState;
+} oasis_entity_t;
 
 typedef struct {
     uint64_t fee_gas;
@@ -111,6 +125,7 @@ typedef struct {
         } registryUnfreezeNode;
 
         struct {
+            oasis_entity_t entity;
             signature_t signature;
         } registryRegisterEntity;
 
@@ -119,14 +134,6 @@ typedef struct {
     uint64_t nonce;
     oasis_methods_e method;
 } oasis_tx_t;
-
-typedef struct {
-    publickey_t id;
-    // We are going to read dynamically like for stakingAmendCommissionSchedule
-    publickey_t node;
-    size_t nodes_length;
-    bool allow_entity_signed_nodes;
-} oasis_entity_t;
 
 typedef enum {
     unknownType,
