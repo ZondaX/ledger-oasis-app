@@ -191,12 +191,12 @@ __Z_INLINE parser_error_t _readSignature(CborValue *value, signature_t *out) {
 
     CHECK_CBOR_MATCH_KEY(&contents, "signature")
     CHECK_CBOR_ERR(cbor_value_advance(&contents))
-    CHECK_CBOR_ERR(_readRawSignature(&contents, &out->raw_signature))
+    CHECK_PARSER_ERR(_readRawSignature(&contents, &out->raw_signature))
     CHECK_CBOR_ERR(cbor_value_advance(&contents))
 
     CHECK_CBOR_MATCH_KEY(&contents, "public_key")
     CHECK_CBOR_ERR(cbor_value_advance(&contents))
-    CHECK_CBOR_ERR(_readPublicKey(&contents, &out->public_key))
+    CHECK_PARSER_ERR(_readPublicKey(&contents, &out->public_key))
     CHECK_CBOR_ERR(cbor_value_advance(&contents))
 
     return parser_ok;
@@ -217,7 +217,7 @@ __Z_INLINE parser_error_t _readRate(CborValue *value, commissionRateStep_t *out)
 
     CHECK_CBOR_MATCH_KEY(&contents, "rate")
     CHECK_CBOR_ERR(cbor_value_advance(&contents))
-    CHECK_CBOR_ERR(_readQuantity(&contents, &out->rate))
+    CHECK_PARSER_ERR(_readQuantity(&contents, &out->rate))
     CHECK_CBOR_ERR(cbor_value_advance(&contents))
 
     CHECK_CBOR_MATCH_KEY(&contents, "start")
@@ -251,12 +251,12 @@ __Z_INLINE parser_error_t _readBound(CborValue *value, commissionRateBoundStep_t
 
     CHECK_CBOR_MATCH_KEY(&contents, "rate_max")
     CHECK_CBOR_ERR(cbor_value_advance(&contents))
-    CHECK_CBOR_ERR(_readQuantity(&contents, &out->rate_max))
+    CHECK_PARSER_ERR(_readQuantity(&contents, &out->rate_max))
     CHECK_CBOR_ERR(cbor_value_advance(&contents))
 
     CHECK_CBOR_MATCH_KEY(&contents, "rate_min")
     CHECK_CBOR_ERR(cbor_value_advance(&contents))
-    CHECK_CBOR_ERR(_readQuantity(&contents, &out->rate_min))
+    CHECK_PARSER_ERR(_readQuantity(&contents, &out->rate_min))
     CHECK_CBOR_ERR(cbor_value_advance(&contents))
 
     return parser_ok;
@@ -457,7 +457,7 @@ __Z_INLINE parser_error_t _readBody(parser_tx_t *v, CborValue *value) {
             CHECK_CBOR_MATCH_KEY(&contents, "signature")
             CHECK_CBOR_ERR(cbor_value_advance(&contents))
             // Read signature
-            CHECK_CBOR_ERR(_readSignature(&contents, &v->oasis.tx.body.registryRegisterEntity.signature))
+            CHECK_PARSER_ERR(_readSignature(&contents, &v->oasis.tx.body.registryRegisterEntity.signature))
             CHECK_CBOR_ERR(cbor_value_advance(&contents))
 
             CHECK_CBOR_MATCH_KEY(&contents, "untrusted_raw_value")
@@ -476,7 +476,7 @@ __Z_INLINE parser_error_t _readBody(parser_tx_t *v, CborValue *value) {
             CHECK_CBOR_ERR(cbor_parser_init(buffer, buffer_size, 0, &cborState->parser, &cborState->startValue))
 
             // Now we can read entity
-            CHECK_CBOR_ERR(_readEntity(&v->oasis.tx.body.registryRegisterEntity.entity))
+            CHECK_PARSER_ERR(_readEntity(&v->oasis.tx.body.registryRegisterEntity.entity))
             CHECK_CBOR_ERR(cbor_value_advance(&contents))
 
             break;
@@ -655,13 +655,13 @@ parser_error_t _read(const parser_context_t *c, parser_tx_t *v) {
     v->type = unknownType;
     if (cbor_value_get_type(&idField) == CborInvalidType) {
         // READ TX
-        CHECK_CBOR_ERR(_readTx(v, &it))
+        CHECK_PARSER_ERR(_readTx(v, &it))
         v->type = txType;
     } else {
         // READ ENTITY
         MEMZERO(&v->oasis.entity, sizeof(oasis_entity_t));
         parser_setCborState(&v->oasis.entity.cborState, &parser, &it);
-        CHECK_CBOR_ERR(_readEntity(&v->oasis.entity))
+        CHECK_PARSER_ERR(_readEntity(&v->oasis.entity))
         v->type = entityType;
     }
 
@@ -765,7 +765,7 @@ __Z_INLINE parser_error_t _getAmendmentContainer(CborValue *value, CborValue *am
 __Z_INLINE parser_error_t _getRatesContainer(CborValue *value, CborValue *ratesContainer) {
 
     CborValue amendmentContainer;
-    CHECK_CBOR_ERR(_getAmendmentContainer(value, &amendmentContainer))
+    CHECK_PARSER_ERR(_getAmendmentContainer(value, &amendmentContainer))
 
     CborValue container;
     CHECK_CBOR_ERR(cbor_value_map_find_value(&amendmentContainer, "rates", &container))
@@ -782,7 +782,7 @@ __Z_INLINE parser_error_t _getRatesContainer(CborValue *value, CborValue *ratesC
 __Z_INLINE parser_error_t _getBoundsContainer(CborValue *value, CborValue *boundsContainer) {
 
     CborValue amendmentContainer;
-    CHECK_CBOR_ERR(_getAmendmentContainer(value, &amendmentContainer))
+    CHECK_PARSER_ERR(_getAmendmentContainer(value, &amendmentContainer))
 
     CborValue container;
     CHECK_CBOR_ERR(cbor_value_map_find_value(&amendmentContainer, "bounds", &container))
@@ -803,13 +803,13 @@ parser_error_t _getCommissionRateStepAtIndex(const parser_context_t *c, commissi
     // We should have already initiated v but should we verify ?
 
     CborValue ratesContainer;
-    CHECK_CBOR_ERR(_getRatesContainer(&it, &ratesContainer))
+    CHECK_PARSER_ERR(_getRatesContainer(&it, &ratesContainer))
 
     for (int i = 0; i < index; i++) {
         CHECK_CBOR_ERR(cbor_value_advance(&ratesContainer))
     }
 
-    CHECK_CBOR_ERR(_readRate(&ratesContainer, rate))
+    CHECK_PARSER_ERR(_readRate(&ratesContainer, rate))
 
     return parser_ok;
 
@@ -826,13 +826,13 @@ parser_error_t _getCommissionBoundStepAtIndex(const parser_context_t *c,
     }
 
     CborValue boundsContainer;
-    CHECK_CBOR_ERR(_getBoundsContainer(&it, &boundsContainer))
+    CHECK_PARSER_ERR(_getBoundsContainer(&it, &boundsContainer))
 
     for (int i = 0; i < index; i++) {
         CHECK_CBOR_ERR(cbor_value_advance(&boundsContainer))
     }
 
-    CHECK_CBOR_ERR(_readBound(&boundsContainer, bound))
+    CHECK_PARSER_ERR(_readBound(&boundsContainer, bound))
 
     return parser_ok;
 }
@@ -862,7 +862,7 @@ parser_error_t _getEntityNodesIdAtIndex(const oasis_entity_t *entity, publickey_
         CHECK_CBOR_ERR(cbor_value_advance(&nodesArrayContainer))
     }
 
-    CHECK_CBOR_ERR(_readPublicKey(&nodesArrayContainer, node))
+    CHECK_PARSER_ERR(_readPublicKey(&nodesArrayContainer, node))
 
     return parser_ok;
 }
