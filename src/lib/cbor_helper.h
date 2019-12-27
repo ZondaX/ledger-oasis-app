@@ -53,3 +53,4 @@ __Z_INLINE parser_error_t _matchKey(CborValue *value, const char *expectedKey) {
 
     return parser_ok;
 }
+#define CBOR_KEY_MATCHES(v, key) (_matchKey(v, key) == parser_ok)

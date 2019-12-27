@@ -473,34 +473,33 @@ __Z_INLINE parser_error_t _readMethod(parser_tx_t *v, CborValue *value) {
     // Verify it is well formed (no missing bytes...)
     CHECK_CBOR_ERR(cbor_value_validate_basic(value))
 
-    oasis_methods_e method = unknownMethod;
-
-    if (_matchKey(value, "staking.Transfer") == parser_ok) {
-        method = stakingTransfer;
-    }
-    if (_matchKey(value, "staking.Burn") == parser_ok) {
-        method = stakingBurn;
-    }
-    if (_matchKey(value, "staking.AddEscrow") == parser_ok) {
-        method = stakingAddEscrow;
-    }
-    if (_matchKey(value, "staking.ReclaimEscrow") == parser_ok) {
-        method = stakingReclaimEscrow;
-    }
-    if (_matchKey(value, "staking.AmendCommissionSchedule") == parser_ok) {
-        method = stakingAmendCommissionSchedule;
-    }
-    if (_matchKey(value, "registry.DeregisterEntity") == parser_ok) {
-        method = registryDeregisterEntity;
-    }
-    if (_matchKey(value, "registry.UnfreezeNode") == parser_ok) {
-        method = registryUnfreezeNode;
-    }
-    if (_matchKey(value, "registry.RegisterEntity") == parser_ok) {
-        method = registryRegisterEntity;
-    }
-
     v->oasis.tx.method = unknownMethod;
+
+    if (CBOR_KEY_MATCHES(value, "staking.Transfer")) {
+        v->oasis.tx.method = stakingTransfer;
+    }
+    if (CBOR_KEY_MATCHES(value, "staking.Burn")) {
+        v->oasis.tx.method = stakingBurn;
+    }
+    if (CBOR_KEY_MATCHES(value, "staking.AddEscrow")) {
+        v->oasis.tx.method = stakingAddEscrow;
+    }
+    if (CBOR_KEY_MATCHES(value, "staking.ReclaimEscrow")) {
+        v->oasis.tx.method = stakingReclaimEscrow;
+    }
+    if (CBOR_KEY_MATCHES(value, "staking.AmendCommissionSchedule")) {
+        v->oasis.tx.method = stakingAmendCommissionSchedule;
+    }
+    if (CBOR_KEY_MATCHES(value, "registry.DeregisterEntity")) {
+        v->oasis.tx.method = registryDeregisterEntity;
+    }
+    if (CBOR_KEY_MATCHES(value, "registry.UnfreezeNode")) {
+        v->oasis.tx.method = registryUnfreezeNode;
+    }
+    if (CBOR_KEY_MATCHES(value, "registry.RegisterEntity")) {
+        v->oasis.tx.method = registryRegisterEntity;
+    }
+
     if (v->oasis.tx.method == unknownMethod)
         return parser_unexpected_method;
 
