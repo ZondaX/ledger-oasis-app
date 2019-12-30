@@ -123,7 +123,7 @@ __Z_INLINE void __memzero(void *buffer, size_t s) { memset(buffer, 0, s); }
 
 #define NUM_TO_STR(TYPE) __Z_INLINE const char * TYPE##_to_str(char *data, int dataLen, TYPE##_t number) { \
     if (dataLen < 2) return "Buffer too small";     \
-    MEMZERO(data, dataLen);                  \
+    MEMZERO(data, dataLen);                         \
     char *p = data;                                 \
     if (number < 0) { *(p++) = '-'; data++; }       \
     else if (number == 0) { *(p++) = '0'; }         \
@@ -150,10 +150,10 @@ NUM_TO_STR(uint64)
 __Z_INLINE void bip44_to_str(char *s, uint32_t max, const uint32_t path[5]) {
     snprintf(s, max, "%d%s%d%s%d%s%d%s%d%s",
              path[0] & 0x7FFFFFFFu, (path[0] & 0x80000000u) != 0 ? "'/" : "/",
-             path[1] & 0x7FFFFFFFu, (path[0] & 0x80000000u) != 0 ? "'/" : "/",
-             path[2] & 0x7FFFFFFFu, (path[0] & 0x80000000u) != 0 ? "'/" : "/",
-             path[3] & 0x7FFFFFFFu, (path[0] & 0x80000000u) != 0 ? "'/" : "/",
-             path[4] & 0x7FFFFFFFu, (path[0] & 0x80000000u) != 0 ? "'" : "");
+             path[1] & 0x7FFFFFFFu, (path[1] & 0x80000000u) != 0 ? "'/" : "/",
+             path[2] & 0x7FFFFFFFu, (path[2] & 0x80000000u) != 0 ? "'/" : "/",
+             path[3] & 0x7FFFFFFFu, (path[3] & 0x80000000u) != 0 ? "'/" : "/",
+             path[4] & 0x7FFFFFFFu, (path[4] & 0x80000000u) != 0 ? "'" : "");
 }
 
 __Z_INLINE int8_t str_to_int8(const char *start, const char *end, char *error) {
