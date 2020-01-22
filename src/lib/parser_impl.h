@@ -22,6 +22,9 @@
 extern "C" {
 #endif
 
+extern const char context_prefix_tx[];
+extern const char context_prefix_entity[];
+
 extern parser_tx_t parser_tx_obj;
 
 parser_error_t parser_init(parser_context_t *ctx, const uint8_t *buffer, uint16_t bufferSize);
