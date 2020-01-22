@@ -21,7 +21,7 @@
 
 parser_tx_t parser_tx_obj;
 const char context_prefix_tx[] = "oasis-core/consensus: tx for chain ";
-const char context_prefix_entity[] = "oasis-core/consensus: tx for chain ";     // FIXME: correct this expected context
+const char context_prefix_entity[] = "oasis-core/registry: register entity";
 
 parser_error_t parser_init_context(parser_context_t *ctx,
                                    const uint8_t *buffer,
