@@ -23,7 +23,7 @@
 #ifdef TESTING_ENABLED
 #define MENU_MAIN_APP_LINE2 "Labs"
 #else
-#define MENU_MAIN_APP_LINE2 "DRAFT Version"
+#define MENU_MAIN_APP_LINE2 "Labs"
 #endif
 
 #define CUR_FLOW G_ux.flow_stack[G_ux.stack_count-1]
