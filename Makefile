@@ -24,10 +24,10 @@ include $(BOLOS_SDK)/Makefile.defines
 # Main app configuration
 APPNAME = "Oasis"
 APPVERSION_M=0
-APPVERSION_N=12
-APPVERSION_P=3
+APPVERSION_N=13
+APPVERSION_P=0
 
-APP_LOAD_PARAMS = --appFlags 0x200 --delete $(COMMON_LOAD_PARAMS) --path "44'/118'"
+APP_LOAD_PARAMS = --appFlags 0x200 --delete $(COMMON_LOAD_PARAMS) --path "44'/474'"
 
 ifeq ($(TARGET_NAME),TARGET_NANOS)
 SCRIPT_LD:=$(CURDIR)/script.ld
